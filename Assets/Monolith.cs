@@ -313,7 +313,7 @@ public class Render
   Monolith mono;
 
   public Material matDefault;
-  public Mesh meshCube, meshOriel, meshWorld, meshGem;
+  public Mesh meshCube, meshOriel, meshWorld, meshGem, meshPlayer;
 
   public void Start(Monolith mono)
   {
@@ -322,29 +322,31 @@ public class Render
 
   public void Update()
   {
-    DrawMesh(meshCube, matDefault, mono.rig.lHand.pos, mono.rig.lHand.rot, Vector3.one * 0.03f);
-    DrawMesh(meshCube, matDefault, mono.rig.rHand.pos, mono.rig.rHand.rot, Vector3.one * 0.03f);
+    DrawMesh(meshCube, matDefault, mono.rig.lHand.pos, mono.rig.lHand.rot, 0.03f);
+    DrawMesh(meshCube, matDefault, mono.rig.rHand.pos, mono.rig.rHand.rot, 0.03f);
 
-    DrawMesh(meshOriel, matDefault, Vector3.zero, Quaternion.identity, mono.oriel);
-    DrawMesh(meshWorld, matDefault, Vector3.zero, Quaternion.identity, Vector3.one * mono.safeRadius);
+    m4.SetTRS(Vector3.zero, Quaternion.identity, mono.oriel);
+    Graphics.DrawMesh(meshOriel, m4, matDefault, 0);
 
-    DrawMesh(meshCube, matDefault, mono.cursor, Quaternion.identity, Vector3.one * 0.02f);
+    DrawMesh(meshWorld, matDefault, Vector3.zero, Quaternion.identity, mono.safeRadius);
 
-    DrawMesh(meshCube, matDefault, mono.player.pos, Quaternion.identity, Vector3.one * 0.02f);
+    DrawMesh(meshCube, matDefault, mono.cursor, Quaternion.identity, 0.02f);
 
-    DrawMesh(meshGem, matDefault, mono.gem.pos, Quaternion.identity, Vector3.one * 0.02f);
+    DrawMesh(meshCube, matDefault, mono.player.pos, Quaternion.identity, 0.02f);
+
+    DrawMesh(meshGem, matDefault, mono.gem.pos, Quaternion.identity, 0.02f);
 
     for (int i = 0; i < mono.enemies.Count; i++)
     {
       DrawMesh(meshCube, matDefault,
-        mono.enemies[i].pos, Quaternion.LookRotation(mono.enemies[i].dir), Vector3.one * 0.02f);
+        mono.enemies[i].pos, Quaternion.LookRotation(mono.enemies[i].dir), 0.02f);
     }
   }
   Matrix4x4 m4 = new Matrix4x4();
 
-  void DrawMesh(Mesh mesh, Material mat, Vector3 pos, Quaternion rot, Vector3 scale)
+  void DrawMesh(Mesh mesh, Material mat, Vector3 pos, Quaternion rot, float scale)
   {
-    m4.SetTRS(pos, rot.normalized, scale);
+    m4.SetTRS(pos, rot.normalized, Vector3.one * scale);
     Graphics.DrawMesh(mesh, m4, mat, 0);
   }
 }
