@@ -23,22 +23,9 @@ public class Monolith : MonoBehaviour
     render.Start(this);
   }
 
-  public int twistIndex;
-  public Quaternion pressRot;
-  public float angle;
   void Update()
   {
     rig.Update();
-    if (rig.rHand.button.down)
-    {
-      pressRot = rig.rHand.rot;
-      Debug.Log("down");
-    }
-
-    if (rig.rHand.button.held)
-    {
-      angle = Quaternion.Angle(pressRot, rig.rHand.rot);
-    }
 
     render.Update();
   }
