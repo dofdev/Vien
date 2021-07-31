@@ -200,7 +200,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 324741823}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 1, z: 0}
+  m_LocalPosition: {x: 0, y: 0, z: -1}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
@@ -358,6 +358,18 @@ MonoBehaviour:
         down: 0
         held: 0
         up: 0
+    offset: {x: 0, y: -0.6, z: -0.6}
+  player:
+    pos: {x: 0, y: 0, z: 0}
+  gem:
+    pos: {x: 0, y: 0, z: 0}
+  enemies: []
   render:
-    matDefault: {fileID: 10302, guid: 0000000000000000f000000000000000, type: 0}
+    matDefault: {fileID: -3846018093981099296, guid: 212bfce1e68be3c4080cf849d8c7717d, type: 3}
     meshCube: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+    meshOriel: {fileID: -9071155252399151903, guid: 3646ec57db738b248b6cce82bcbfa330, type: 3}
+    meshWorld: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
+    meshGem: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+  oriel: {x: 1, y: 0.666, z: 0.666}
+  cursor: {x: 0, y: 0, z: 0}
+  safeRadius: 0.2
