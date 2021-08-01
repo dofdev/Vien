@@ -17,6 +17,7 @@ public class Monolith : MonoBehaviour
   public List<Enemy> enemies = new List<Enemy>();
   public Render render;
   public SFX sfx;
+  public Music music;
   [HideInInspector]
   public TextMeshPro textMesh;
 
@@ -39,6 +40,7 @@ public class Monolith : MonoBehaviour
     textMesh.fontSize = 1;
 
     sfx.Start(this);
+    music.Start(this);
   }
 
   void Start()
@@ -56,7 +58,8 @@ public class Monolith : MonoBehaviour
     textMesh.text = "START";
   }
 
-  bool playing = false;
+  [HideInInspector]
+  public bool playing = false;
   void Update()
   {
     rig.Update();
@@ -89,8 +92,9 @@ public class Monolith : MonoBehaviour
     }
 
 
-    sfx.Update();
     render.Update();
+    sfx.Update();
+    music.Update();
   }
 
   public Vector3 OutOfBounds(Vector3 pos)
@@ -405,6 +409,8 @@ public class Render
   public Material matDefault, matOriel, matDebug;
   public Mesh meshCube, meshSphere, meshOriel, meshWorld, meshGem, meshTree, meshPlayer, meshEnemy, meshCursor;
 
+  Quaternion planetRot = Quaternion.identity;
+
   public void Start(Monolith mono)
   {
     this.mono = mono;
@@ -419,7 +425,9 @@ public class Render
     Graphics.DrawMesh(meshOriel, m4, matOriel, 0);
     // DrawMesh(meshStart, matUI, Vector3.back * 0.5f, Quaternion.Euler(-90, 0, 0), 0.05f);
 
-    DrawMesh(meshWorld, matDefault, Vector3.zero, Quaternion.identity, 0.01f);
+    Quaternion planetTurn = Quaternion.Euler(0, Time.deltaTime * -6, 0);
+    planetRot *= planetTurn;
+    DrawMesh(meshWorld, matDefault, Vector3.zero, planetRot, 0.01f);
 
     DrawMesh(meshCursor, matDefault, mono.cursor, Quaternion.identity, 0.02f);
 
@@ -429,7 +437,8 @@ public class Render
 
     for (int i = 0; i < mono.trees.Count; i++)
     {
-      DrawMesh(meshTree, matDefault, 
+      mono.trees[i] = planetTurn * mono.trees[i];
+      DrawMesh(meshTree, matDefault,
         mono.trees[i], Quaternion.LookRotation(mono.trees[i]), 0.003f);
     }
 
@@ -510,5 +519,41 @@ public class SFX
         }
       }
     }
+  }
+}
+
+[Serializable]
+public class Music
+{
+  Monolith mono;
+
+  AudioSource srcMenu, srcGame;
+
+  public void Start(Monolith mono)
+  {
+    this.mono = mono;
+
+    GameObject newSrc = new GameObject();
+    srcMenu = newSrc.AddComponent<AudioSource>();
+    srcMenu.clip = Resources.Load<AudioClip>("menu");
+    srcMenu.loop = true;
+    srcMenu.volume = 0;
+    srcMenu.Play();
+    
+    newSrc = new GameObject();
+    srcGame = newSrc.AddComponent<AudioSource>();
+    srcGame.clip = Resources.Load<AudioClip>("game");
+    srcGame.loop = true;
+    srcGame.volume = 0;
+    srcGame.Play();
+  }
+
+  public void Update()
+  {
+    float menuVol = mono.playing ? 0 : 1;
+    srcMenu.volume = Mathf.Lerp(srcMenu.volume, menuVol, Time.deltaTime / 3);
+
+    float gameVol = mono.playing ? 1 : 0;
+    srcGame.volume = Mathf.Lerp(srcGame.volume, gameVol, Time.deltaTime / 3);
   }
 }
