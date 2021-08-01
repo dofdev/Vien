@@ -19,6 +19,7 @@ public class Monolith : MonoBehaviour
   public Vector3 oriel;
   public Vector3 cursor;
   public float safeRadius = 0.2f;
+  public float enemyRadius = 0.02f;
 
 
   void Awake()
@@ -48,7 +49,7 @@ public class Monolith : MonoBehaviour
       for (int i = 0; i < enemies.Count; i++)
       {
         enemies[i].Update();
-        if (Vector3.Distance(enemies[i].pos, player.pos) < 0.02f)
+        if (enemies[i].Hit(player))
         {
           Debug.Log("game over");
           // alternative ending is where all the enemies target what spawned them, and phase out
@@ -93,11 +94,26 @@ public class Monolith : MonoBehaviour
 }
 
 [Serializable]
-public class Player
+public class Detect
+{
+  public Vector3 pos;
+  public float radius;
+
+  public bool Hit(Detect other)
+  {
+    return Vector3.Distance(pos, other.pos) <= radius + other.radius;
+  }
+
+  // Bounds bounds = new Bounds(Vector3.zero, Vector3.one * scale * 0.5f);
+  // bounds.Intersects(bounds);
+}
+
+[Serializable]
+public class Player : Detect
 {
   Monolith mono;
 
-  public Vector3 pos, dir;
+  public Vector3 dir;
   public float followDist = 0.06f;
 
   public void Start(Monolith mono)
@@ -130,10 +146,9 @@ public class Player
 }
 
 [Serializable]
-public class Gem
+public class Gem : Detect
 {
   Monolith mono;
-  public Vector3 pos;
 
   public void Start(Monolith mono)
   {
@@ -145,7 +160,7 @@ public class Gem
   public void Spawn()
   {
     pos = Vector3.zero;
-    while (pos.magnitude < mono.safeRadius)
+    while (pos.magnitude < mono.safeRadius || Hit(mono.player))
     {
       pos = new Vector3(
         Random.Range(-mono.oriel.x / 2, mono.oriel.x / 2),
@@ -158,7 +173,7 @@ public class Gem
   bool held = false;
   public void Update()
   {
-    if (!held && Vector3.Distance(mono.player.pos, pos) < 0.04f)
+    if (!held && Hit(mono.player))
     {
       held = true;
     }
@@ -182,11 +197,11 @@ public class Gem
 }
 
 [Serializable]
-public class Enemy
+public class Enemy : Detect
 {
   Monolith mono;
 
-  public Vector3 pos, dir;
+  public Vector3 dir;
 
   public void Start(Monolith mono)
   {
@@ -202,6 +217,8 @@ public class Enemy
 
   public void Update()
   {
+    radius = mono.enemyRadius;
+
     // move forward
     pos += dir * 0.25f * Time.deltaTime;
     Vector3 normal = mono.OutOfBounds(pos);
@@ -282,11 +299,12 @@ public class Rig
       rHand.button.Set(rCon.TryGetChildControl("primarybutton").IsPressed());
     }
 
-    // stretch cursor
-    float stretch = Vector3.Distance(lHand.pos, rHand.pos);
-    mono.cursor = rHand.pos + rHand.rot * Quaternion.Euler(45, 0, 0) * Vector3.forward * stretch * 3;
-
-    //or twist cursor
+    if (hmd != null)
+    {
+      // stretch cursor
+      float stretch = Vector3.Distance(lHand.pos, rHand.pos);
+      mono.cursor = rHand.pos + rHand.rot * Quaternion.Euler(45, 0, 0) * Vector3.forward * stretch * 3;
+    }
   }
 
   public Vector3 Pivot(Vector3 pos, Vector3 pivot, Quaternion rot)
@@ -341,8 +359,8 @@ public class Render
 {
   Monolith mono;
 
-  public Material matDefault, matOriel;
-  public Mesh meshCube, meshOriel, meshWorld, meshGem, meshTree, meshPlayer, meshEnemy;
+  public Material matDefault, matOriel, matDebug;
+  public Mesh meshCube, meshSphere, meshOriel, meshWorld, meshGem, meshTree, meshPlayer, meshEnemy;
 
   public void Start(Monolith mono)
   {
@@ -375,6 +393,18 @@ public class Render
     {
       DrawMesh(meshEnemy, matDefault,
         mono.enemies[i].pos, Quaternion.LookRotation(mono.enemies[i].dir), 0.005f);
+    }
+
+    if (true)
+    {
+      DrawMesh(meshSphere, matDebug, Vector3.zero, Quaternion.identity, mono.safeRadius / 2);
+      DrawMesh(meshSphere, matDebug, mono.cursor, Quaternion.identity, mono.player.followDist / 2);
+      DrawMesh(meshSphere, matDebug, mono.player.pos, Quaternion.identity, mono.player.radius / 2);
+      DrawMesh(meshSphere, matDebug, mono.gem.pos, Quaternion.identity, mono.gem.radius / 2);
+      for (int i = 0; i < mono.enemies.Count; i++)
+      {
+        DrawMesh(meshSphere, matDebug, mono.enemies[i].pos, Quaternion.identity, mono.enemies[i].radius / 2);
+      }
     }
   }
   Matrix4x4 m4 = new Matrix4x4();
