@@ -16,6 +16,8 @@ public class Monolith : MonoBehaviour
   public List<Vector3> trees = new List<Vector3>();
   public List<Enemy> enemies = new List<Enemy>();
   public Render render;
+  [HideInInspector]
+  public TextMeshPro textMesh;
 
   public Vector3 cursor;
   [HideInInspector]
@@ -27,24 +29,46 @@ public class Monolith : MonoBehaviour
   {
     oriel = new Vector3(1, 0.666f, 1);
     safeRadius = 0.12f;
+
+    GameObject go = new GameObject();
+    go.transform.position = Vector3.back * oriel.z / 2;
+    textMesh = go.AddComponent<TextMeshPro>();
+    textMesh.horizontalAlignment = HorizontalAlignmentOptions.Center;
+    textMesh.verticalAlignment = VerticalAlignmentOptions.Middle;
+    textMesh.fontSize = 1;
   }
 
   void Start()
   {
+    trees.Clear();
+    enemies.Clear();
+
     rig.Start(this);
 
     player.Start(this);
     gem.Start(this);
 
     render.Start(this);
+
+    textMesh.text = "START";
   }
 
-  bool playing = true;
+  bool playing = false;
   void Update()
   {
     rig.Update();
 
-    if (playing)
+    if (!playing)
+    {
+      Mouse mouse = Mouse.current;
+      if (rig.rHand.button.down || (mouse != null && Mouse.current.leftButton.IsPressed()))
+      {
+        Start();
+        textMesh.text = "";
+        playing = true;
+      }
+    }
+    else
     {
       player.Update();
       gem.Update();
@@ -53,9 +77,9 @@ public class Monolith : MonoBehaviour
         enemies[i].Update();
         if (enemies[i].Hit(player))
         {
-          Debug.Log("game over");
-          // alternative ending is where all the enemies target what spawned them, and phase out
+          textMesh.text = trees.Count + " <br>RESET?";
           playing = false;
+          // alternative ending is where all the enemies target what spawned them, and phase out
         }
       }
     }
@@ -219,9 +243,9 @@ public class Enemy : Detect
 
     // spawn out, then clamp in
     pos = Random.rotation * Vector3.forward * mono.oriel.x * 2;
-    pos.x = Mathf.Clamp(pos.x, -mono.oriel.x / 2, mono.oriel.x / 2);
-    pos.y = Mathf.Clamp(pos.y, -mono.oriel.y / 2, mono.oriel.y / 2);
-    pos.z = Mathf.Clamp(pos.z, -mono.oriel.z / 2, mono.oriel.z / 2);
+    pos.x = Mathf.Clamp(pos.x, (-mono.oriel.x / 2) + radius * 2, (mono.oriel.x / 2) - radius * 2);
+    pos.y = Mathf.Clamp(pos.y, (-mono.oriel.y / 2) + radius * 2, (mono.oriel.y / 2) - radius * 2);
+    pos.z = Mathf.Clamp(pos.z, (-mono.oriel.z / 2) + radius * 2, (mono.oriel.z / 2) - radius * 2);
     dir = Random.rotation * Vector3.forward;
   }
 
@@ -268,7 +292,6 @@ public class Rig
     scale = 2;
   }
 
-  public List<InputDevice> devices = new List<InputDevice>();
   public void Update()
   {
     Vector3 rigPos = Vector3.zero;
@@ -294,7 +317,7 @@ public class Rig
       lHand.pos = Pivot(lCon.devicePosition.ReadValue() * scale, rigPos, rigRot);
       lHand.rot = rigRot * lCon.deviceRotation.ReadValue();
 
-      lHand.button.Set(lCon.TryGetChildControl("primarybutton").IsPressed());
+      lHand.button.Set(lCon.TryGetChildControl("triggerpressed").IsPressed());
 
       // foreach (InputControl ic in lCon.children)
       // {
@@ -309,7 +332,7 @@ public class Rig
       rHand.pos = Pivot(rCon.devicePosition.ReadValue() * scale, rigPos, rigRot);
       rHand.rot = rigRot * rCon.deviceRotation.ReadValue();
 
-      rHand.button.Set(rCon.TryGetChildControl("primarybutton").IsPressed());
+      rHand.button.Set(rCon.TryGetChildControl("triggerpressed").IsPressed());
     }
 
     if (hmd != null)
@@ -376,20 +399,9 @@ public class Render
   public Material matDefault, matOriel, matDebug;
   public Mesh meshCube, meshSphere, meshOriel, meshWorld, meshGem, meshTree, meshPlayer, meshEnemy, meshCursor;
 
-  [HideInInspector]
-  public TextMeshPro textMesh;
-
   public void Start(Monolith mono)
   {
     this.mono = mono;
-
-    GameObject go = new GameObject();
-    go.transform.position = Vector3.back * mono.oriel.z / 2;
-    textMesh = go.AddComponent<TextMeshPro>();
-    textMesh.horizontalAlignment = HorizontalAlignmentOptions.Center;
-    textMesh.verticalAlignment = VerticalAlignmentOptions.Middle;
-    textMesh.fontSize = 1;
-    textMesh.text = "^-^";
   }
 
   public void Update()
