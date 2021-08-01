@@ -376,12 +376,19 @@ MonoBehaviour:
     matDebug: {fileID: 2100000, guid: f1b5cf34da6a89949bf813fcdc645e42, type: 2}
     meshCube: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
     meshSphere: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
-    meshOriel: {fileID: -9071155252399151903, guid: 3646ec57db738b248b6cce82bcbfa330, type: 3}
-    meshWorld: {fileID: -2780908442749711973, guid: 4a251bcd1437bbc46b31ad17f3b60985, type: 3}
-    meshGem: {fileID: 8319830112727845735, guid: 4a251bcd1437bbc46b31ad17f3b60985, type: 3}
-    meshTree: {fileID: 6985500412591696348, guid: e1f381577e5eae94b8040655ae5dade5, type: 3}
-    meshPlayer: {fileID: 9107807531863434886, guid: f7345ef1beb9788438b691c0295892af, type: 3}
-    meshEnemy: {fileID: -3068693193847173707, guid: 0807baab91461874d8b241886106c25e, type: 3}
+    meshOriel: {fileID: -9071155252399151903, guid: 3646ec57db738b248b6cce82bcbfa330,
+      type: 3}
+    meshWorld: {fileID: -2780908442749711973, guid: 4a251bcd1437bbc46b31ad17f3b60985,
+      type: 3}
+    meshGem: {fileID: 8319830112727845735, guid: 4a251bcd1437bbc46b31ad17f3b60985,
+      type: 3}
+    meshTree: {fileID: 6985500412591696348, guid: e1f381577e5eae94b8040655ae5dade5,
+      type: 3}
+    meshPlayer: {fileID: 9107807531863434886, guid: f7345ef1beb9788438b691c0295892af,
+      type: 3}
+    meshEnemy: {fileID: -3068693193847173707, guid: 0807baab91461874d8b241886106c25e,
+      type: 3}
+    textMesh: {fileID: 0}
   oriel: {x: 1, y: 0.666, z: 1}
   cursor: {x: 0, y: 0, z: 0}
   safeRadius: 0.12

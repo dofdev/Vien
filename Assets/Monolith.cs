@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.XR;
+using TMPro;
 
 using Random = UnityEngine.Random;
 
@@ -16,15 +17,16 @@ public class Monolith : MonoBehaviour
   public List<Enemy> enemies = new List<Enemy>();
   public Render render;
 
-  public Vector3 oriel;
   public Vector3 cursor;
+  [HideInInspector]
+  public Vector3 oriel;
+  [HideInInspector]
   public float safeRadius = 0.2f;
-  public float enemyRadius = 0.02f;
-
 
   void Awake()
   {
-
+    oriel = new Vector3(1, 0.666f, 1);
+    safeRadius = 0.12f;
   }
 
   void Start()
@@ -97,6 +99,7 @@ public class Monolith : MonoBehaviour
 public class Detect
 {
   public Vector3 pos;
+  [HideInInspector]
   public float radius;
 
   public bool Hit(Detect other)
@@ -114,7 +117,8 @@ public class Player : Detect
   Monolith mono;
 
   public Vector3 dir;
-  public float followDist = 0.06f;
+  [HideInInspector]
+  public float followDist;
 
   public void Start(Monolith mono)
   {
@@ -122,6 +126,8 @@ public class Player : Detect
 
     pos = Vector3.zero;
     dir = Vector3.back;
+    radius = 0.02f;
+    followDist = 0.06f;
   }
 
   public void Update()
@@ -153,6 +159,8 @@ public class Gem : Detect
   public void Start(Monolith mono)
   {
     this.mono = mono;
+
+    radius = 0.02f;
 
     Spawn();
   }
@@ -207,6 +215,8 @@ public class Enemy : Detect
   {
     this.mono = mono;
 
+    radius = 0.02f;
+
     // spawn out, then clamp in
     pos = Random.rotation * Vector3.forward * mono.oriel.x * 2;
     pos.x = Mathf.Clamp(pos.x, -mono.oriel.x / 2, mono.oriel.x / 2);
@@ -217,8 +227,6 @@ public class Enemy : Detect
 
   public void Update()
   {
-    radius = mono.enemyRadius;
-
     // move forward
     pos += dir * 0.25f * Time.deltaTime;
     Vector3 normal = mono.OutOfBounds(pos);
@@ -247,12 +255,17 @@ public class Rig
   public Camera cam;
   public PhysicalInput lHand, rHand;
 
+  [HideInInspector]
   public Vector3 offset;
-  public float scale = 1.0f;
+  [HideInInspector]
+  public float scale;
 
   public void Start(Monolith mono)
   {
     this.mono = mono;
+
+    offset = new Vector3(0, 0.1f, -1.3f);
+    scale = 2;
   }
 
   public List<InputDevice> devices = new List<InputDevice>();
@@ -303,7 +316,8 @@ public class Rig
     {
       // stretch cursor
       float stretch = Vector3.Distance(lHand.pos, rHand.pos);
-      mono.cursor = rHand.pos + rHand.rot * Quaternion.Euler(45, 0, 0) * Vector3.forward * stretch * 3;
+      // Quaternion.Euler(-30, 0, 0)
+      mono.cursor = rHand.pos + rHand.rot * Vector3.forward * stretch * 3;
     }
   }
 
@@ -362,9 +376,20 @@ public class Render
   public Material matDefault, matOriel, matDebug;
   public Mesh meshCube, meshSphere, meshOriel, meshWorld, meshGem, meshTree, meshPlayer, meshEnemy, meshCursor;
 
+  [HideInInspector]
+  public TextMeshPro textMesh;
+
   public void Start(Monolith mono)
   {
     this.mono = mono;
+
+    GameObject go = new GameObject();
+    go.transform.position = Vector3.back * mono.oriel.z / 2;
+    textMesh = go.AddComponent<TextMeshPro>();
+    textMesh.horizontalAlignment = HorizontalAlignmentOptions.Center;
+    textMesh.verticalAlignment = VerticalAlignmentOptions.Middle;
+    textMesh.fontSize = 1;
+    textMesh.text = "^-^";
   }
 
   public void Update()
@@ -374,6 +399,7 @@ public class Render
 
     m4.SetTRS(Vector3.zero, Quaternion.identity, mono.oriel);
     Graphics.DrawMesh(meshOriel, m4, matOriel, 0);
+    // DrawMesh(meshStart, matUI, Vector3.back * 0.5f, Quaternion.Euler(-90, 0, 0), 0.05f);
 
     DrawMesh(meshWorld, matDefault, Vector3.zero, Quaternion.identity, 0.01f);
 
