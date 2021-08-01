@@ -313,7 +313,7 @@ public class Render
   Monolith mono;
 
   public Material matDefault;
-  public Mesh meshCube, meshOriel, meshWorld, meshGem, meshPlayer;
+  public Mesh meshCube, meshOriel, meshWorld, meshGem, meshPlayer, meshEnemy;
 
   public void Start(Monolith mono)
   {
@@ -332,14 +332,14 @@ public class Render
 
     DrawMesh(meshCube, matDefault, mono.cursor, Quaternion.identity, 0.02f);
 
-    DrawMesh(meshCube, matDefault, mono.player.pos, Quaternion.identity, 0.02f);
+    DrawMesh(meshPlayer, matDefault, mono.player.pos, Quaternion.identity, 0.02f);
 
     DrawMesh(meshGem, matDefault, mono.gem.pos, Quaternion.identity, 0.02f);
 
     for (int i = 0; i < mono.enemies.Count; i++)
     {
-      DrawMesh(meshCube, matDefault,
-        mono.enemies[i].pos, Quaternion.LookRotation(mono.enemies[i].dir), 0.02f);
+      DrawMesh(meshEnemy, matDefault,
+        mono.enemies[i].pos, Quaternion.LookRotation(mono.enemies[i].dir), 0.01f);
     }
   }
   Matrix4x4 m4 = new Matrix4x4();
