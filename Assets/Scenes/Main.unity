@@ -358,7 +358,7 @@ MonoBehaviour:
         down: 0
         held: 0
         up: 0
-    offset: {x: 0, y: 0.1, z: -1}
+    offset: {x: 0, y: 0.1, z: -1.3}
     scale: 2
   player:
     pos: {x: 0, y: 0, z: 0}
@@ -378,6 +378,6 @@ MonoBehaviour:
     meshTree: {fileID: 6985500412591696348, guid: f7345ef1beb9788438b691c0295892af, type: 3}
     meshPlayer: {fileID: 9107807531863434886, guid: f7345ef1beb9788438b691c0295892af, type: 3}
     meshEnemy: {fileID: 2665125691307162770, guid: 212bfce1e68be3c4080cf849d8c7717d, type: 3}
-  oriel: {x: 1, y: 0.666, z: 0.666}
+  oriel: {x: 1, y: 0.666, z: 1}
   cursor: {x: 0, y: 0, z: 0}
   safeRadius: 0.12

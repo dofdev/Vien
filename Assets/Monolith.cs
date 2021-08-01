@@ -282,7 +282,11 @@ public class Rig
       rHand.button.Set(rCon.TryGetChildControl("primarybutton").IsPressed());
     }
 
-    mono.cursor = rHand.pos;
+    // stretch cursor
+    float stretch = Vector3.Distance(lHand.pos, rHand.pos);
+    mono.cursor = rHand.pos + rHand.rot * Quaternion.Euler(45, 0, 0) * Vector3.forward * stretch * 3;
+
+    //or twist cursor
   }
 
   public Vector3 Pivot(Vector3 pos, Vector3 pivot, Quaternion rot)
