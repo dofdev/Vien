@@ -16,6 +16,7 @@ public class Monolith : MonoBehaviour
   public List<Vector3> trees = new List<Vector3>();
   public List<Enemy> enemies = new List<Enemy>();
   public Render render;
+  public SFX sfx;
   [HideInInspector]
   public TextMeshPro textMesh;
 
@@ -36,6 +37,8 @@ public class Monolith : MonoBehaviour
     textMesh.horizontalAlignment = HorizontalAlignmentOptions.Center;
     textMesh.verticalAlignment = VerticalAlignmentOptions.Middle;
     textMesh.fontSize = 1;
+
+    sfx.Start(this);
   }
 
   void Start()
@@ -78,6 +81,7 @@ public class Monolith : MonoBehaviour
         if (enemies[i].Hit(player))
         {
           textMesh.text = trees.Count + " <br>RESET?";
+          sfx.Play("gameover");
           playing = false;
           // alternative ending is where all the enemies target what spawned them, and phase out
         }
@@ -85,7 +89,7 @@ public class Monolith : MonoBehaviour
     }
 
 
-
+    sfx.Update();
     render.Update();
   }
 
@@ -207,6 +211,7 @@ public class Gem : Detect
   {
     if (!held && Hit(mono.player))
     {
+      mono.sfx.Play("pickup");
       held = true;
     }
     if (held)
@@ -215,6 +220,7 @@ public class Gem : Detect
 
       if (pos.magnitude < mono.safeRadius)
       {
+        mono.sfx.Play("tree");
         mono.trees.Add(pos);
 
         Enemy enemy = new Enemy();
@@ -451,5 +457,58 @@ public class Render
   {
     m4.SetTRS(pos, rot.normalized, Vector3.one * scale);
     Graphics.DrawMesh(mesh, m4, mat, 0);
+  }
+}
+
+[Serializable]
+public class SFX
+{
+  Monolith mono;
+
+  List<GameObject> srcs = new List<GameObject>();
+  AudioClip[] clips;
+
+  public void Start(Monolith mono)
+  {
+    this.mono = mono;
+
+    for (int i = 0; i < 6; i++)
+    {
+      GameObject newSrc = new GameObject();
+      newSrc.AddComponent<AudioSource>();
+      srcs.Add(newSrc);
+    }
+
+    // tree = Resources.Load<AudioClip>("SFX/" + "tree");
+    clips = Resources.LoadAll<AudioClip>("SFX/");
+    for (int i = 0; i < clips.Length; i++)
+    {
+      Debug.Log(clips[i].name);
+    }
+  }
+
+  public void Update()
+  {
+
+  }
+
+  public void Play(string name)
+  {
+    for (int i = 0; i < srcs.Count; i++)
+    {
+      AudioSource src = srcs[i].GetComponent<AudioSource>();
+      if (!src.isPlaying)
+      {
+        for (int j = 0; j < clips.Length; j++)
+        {
+          if (name == clips[j].name)
+          {
+            src.clip = clips[j];
+            src.Play();
+            return;
+          }
+        }
+      }
+    }
   }
 }
