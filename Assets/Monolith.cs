@@ -247,7 +247,7 @@ public class Rig
       Vector3 headPos = hmd.centerEyePosition.ReadValue() * 2;
       Quaternion headRot = hmd.centerEyeRotation.ReadValue();
 
-      rigPos = -headPos + offset;
+      rigPos = -headPos + (headRot * offset);
       // rigRot = headRot;
 
       cam.transform.position = Pivot(headPos, rigPos, rigRot);
