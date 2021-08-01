@@ -379,9 +379,10 @@ MonoBehaviour:
     meshOriel: {fileID: -9071155252399151903, guid: 3646ec57db738b248b6cce82bcbfa330, type: 3}
     meshWorld: {fileID: -2780908442749711973, guid: 4a251bcd1437bbc46b31ad17f3b60985, type: 3}
     meshGem: {fileID: 8319830112727845735, guid: 4a251bcd1437bbc46b31ad17f3b60985, type: 3}
-    meshTree: {fileID: 6985500412591696348, guid: f7345ef1beb9788438b691c0295892af, type: 3}
+    meshTree: {fileID: 6985500412591696348, guid: e1f381577e5eae94b8040655ae5dade5, type: 3}
     meshPlayer: {fileID: 9107807531863434886, guid: f7345ef1beb9788438b691c0295892af, type: 3}
     meshEnemy: {fileID: 2665125691307162770, guid: 212bfce1e68be3c4080cf849d8c7717d, type: 3}
   oriel: {x: 1, y: 0.666, z: 1}
   cursor: {x: 0, y: 0, z: 0}
   safeRadius: 0.12
+  enemyRadius: 0.02
