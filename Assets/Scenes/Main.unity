@@ -38,7 +38,7 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 0}
-  m_IndirectSpecularColor: {r: 0.0161209, g: 0.019020723, b: 0.024608016, a: 1}
+  m_IndirectSpecularColor: {r: 0.016120879, g: 0.019020692, b: 0.024607986, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
@@ -98,8 +98,7 @@ LightmapSettings:
     m_TrainingDataDestination: TrainingData
     m_LightProbeSampleCountMultiplier: 4
   m_LightingDataAsset: {fileID: 0}
-  m_LightingSettings: {fileID: 4890085278179872738, guid: 3fc2dcda98d9354448d365dab92011b2,
-    type: 2}
+  m_LightingSettings: {fileID: 4890085278179872738, guid: 3fc2dcda98d9354448d365dab92011b2, type: 2}
 --- !u!196 &4
 NavMeshSettings:
   serializedVersion: 2
@@ -366,6 +365,7 @@ MonoBehaviour:
     radius: 0
     dir: {x: 0, y: 0, z: 0}
     followDist: 0.06
+    speed: 0
   gem:
     pos: {x: 0, y: 0, z: 0}
     radius: 0.03
@@ -375,24 +375,16 @@ MonoBehaviour:
     matDefault: {fileID: 2100000, guid: 91309002ecd29ad42b6c6cf7a7d99c4a, type: 2}
     matOriel: {fileID: 2100000, guid: 195231565fac58142afedfd91d21fde0, type: 2}
     matDebug: {fileID: 2100000, guid: f1b5cf34da6a89949bf813fcdc645e42, type: 2}
-    meshCube: {fileID: 1978567263064991462, guid: 59130073981da984da6e18c1843a8127,
-      type: 3}
-    meshSphere: {fileID: 3894885956596533009, guid: bd4492b9c7c875141bd71525067b2abe,
-      type: 3}
-    meshOriel: {fileID: -9071155252399151903, guid: 3646ec57db738b248b6cce82bcbfa330,
-      type: 3}
-    meshWorld: {fileID: -2780908442749711973, guid: 4a251bcd1437bbc46b31ad17f3b60985,
-      type: 3}
-    meshGem: {fileID: 8319830112727845735, guid: 4a251bcd1437bbc46b31ad17f3b60985,
-      type: 3}
-    meshTree: {fileID: 6985500412591696348, guid: e1f381577e5eae94b8040655ae5dade5,
-      type: 3}
-    meshPlayer: {fileID: 9107807531863434886, guid: f7345ef1beb9788438b691c0295892af,
-      type: 3}
-    meshEnemy: {fileID: -3068693193847173707, guid: 0807baab91461874d8b241886106c25e,
-      type: 3}
-    meshCursor: {fileID: 4575378312840820631, guid: 7a8e664ca6e0d124ab8f752eee706ac9,
-      type: 3}
+    matPS: {fileID: 0}
+    meshCube: {fileID: 1978567263064991462, guid: 59130073981da984da6e18c1843a8127, type: 3}
+    meshSphere: {fileID: 3894885956596533009, guid: bd4492b9c7c875141bd71525067b2abe, type: 3}
+    meshOriel: {fileID: -9071155252399151903, guid: 3646ec57db738b248b6cce82bcbfa330, type: 3}
+    meshWorld: {fileID: 2709148759169079885, guid: 8116412203d86344f9bbc326d7199a15, type: 3}
+    meshGem: {fileID: 8319830112727845735, guid: 4a251bcd1437bbc46b31ad17f3b60985, type: 3}
+    meshTree: {fileID: 6985500412591696348, guid: e1f381577e5eae94b8040655ae5dade5, type: 3}
+    meshPlayer: {fileID: 9107807531863434886, guid: f7345ef1beb9788438b691c0295892af, type: 3}
+    meshEnemy: {fileID: 3634926235976907507, guid: 6aa3937fc6e36fd46adb0069b4e932e3, type: 3}
+    meshCursor: {fileID: 4575378312840820631, guid: 7a8e664ca6e0d124ab8f752eee706ac9, type: 3}
   textMesh: {fileID: 0}
   cursor: {x: 0, y: 0, z: 0}
   oriel: {x: 1, y: 0.666, z: 1}

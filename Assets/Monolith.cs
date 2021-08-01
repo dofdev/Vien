@@ -29,7 +29,7 @@ public class Monolith : MonoBehaviour
 
   void Awake()
   {
-    oriel = new Vector3(1, 0.666f, 1);
+    oriel = new Vector3(0.8f, 0.7f, 0.8f);
     safeRadius = 0.12f;
 
     GameObject go = new GameObject();
@@ -39,6 +39,7 @@ public class Monolith : MonoBehaviour
     textMesh.verticalAlignment = VerticalAlignmentOptions.Middle;
     textMesh.fontSize = 1;
 
+    rig.Start(this);
     render.Start(this);
     sfx.Start(this);
     music.Start(this);
@@ -48,8 +49,6 @@ public class Monolith : MonoBehaviour
   {
     trees.Clear();
     enemies.Clear();
-
-    rig.Start(this);
 
     player.Start(this);
     gem.Start(this);
@@ -66,7 +65,7 @@ public class Monolith : MonoBehaviour
     if (!playing)
     {
       Mouse mouse = Mouse.current;
-      if (rig.rHand.button.down || (mouse != null && Mouse.current.leftButton.IsPressed()))
+      if (rig.rHand.button.down || rig.lHand.button.down || (mouse != null && Mouse.current.leftButton.IsPressed()))
       {
         Start();
         textMesh.text = "";
@@ -291,14 +290,25 @@ public class Rig
   [HideInInspector]
   public float scale;
 
+  LineRenderer lineCursor, lineStretch;
   public void Start(Monolith mono)
   {
     this.mono = mono;
 
-    offset = new Vector3(0, 0.1f, -1.5f);
+    offset = new Vector3(0, 0.1f, -1.6f);
     scale = 2;
+
+    lineCursor = mono.gameObject.AddComponent<LineRenderer>();
+    lineCursor.widthMultiplier = 0.006f;
+    lineCursor.material = mono.render.matDebug;
+    // lineStretch = mono.gameObject.AddComponent<LineRenderer>();
   }
 
+  Vector3 cursorDir = Vector3.forward;
+  float cursorDist = 1.5f;
+  float stretchMid = 0.67f;
+  float stretchScale = 3;
+  bool lefty = false;
   public void Update()
   {
     Vector3 rigPos = Vector3.zero;
@@ -344,10 +354,42 @@ public class Rig
 
     if (hmd != null)
     {
-      // stretch cursor
-      float stretch = Vector3.Distance(lHand.pos, rHand.pos);
-      // Quaternion.Euler(-30, 0, 0)
-      mono.cursor = rHand.pos + rHand.rot * Vector3.forward * stretch * 3;
+      bool recalibrate = false;
+      if (lHand.button.down)
+      {
+        lefty = true;
+        recalibrate = true;
+      }
+      if (rHand.button.down)
+      {
+        lefty = false;
+        recalibrate = true;
+      }
+
+      PhysicalInput offHand = lHand;
+      PhysicalInput mainHand = rHand;
+      if (lefty)
+      {
+        offHand = rHand;
+        mainHand = lHand;
+      }
+
+      float handDist = Vector3.Distance(mainHand.pos, offHand.pos);
+      if (recalibrate)
+      {
+        cursorDir = Quaternion.Inverse(mainHand.rot) * -mainHand.pos.normalized;
+        cursorDist = mainHand.pos.magnitude;
+        stretchMid = handDist;
+      }
+
+      float stretch = handDist - stretchMid;
+      // lineStretch.SetPosition(0, offHand.pos);
+      // lineStretch.SetPosition(1, mainHand.pos);
+      // lineStretch.widthMultiplier = 0.1f * ((stretchMid * 2) - Mathf.Clamp(handDist, 0.1f, stretchMid * 2));
+
+      mono.cursor = mainHand.pos + mainHand.rot * cursorDir * (cursorDist + (stretch * stretchScale));
+      lineCursor.SetPosition(0, mono.cursor);
+      lineCursor.SetPosition(1, mainHand.pos);
     }
   }
 
@@ -451,7 +493,7 @@ public class Render
     if (true)
     {
       DrawMesh(meshSphere, matDebug, Vector3.zero, Quaternion.identity, mono.safeRadius / 2);
-      DrawMesh(meshSphere, matDebug, mono.cursor, Quaternion.identity, mono.player.followDist / 2);
+      // DrawMesh(meshSphere, matDebug, mono.cursor, Quaternion.identity, mono.player.followDist / 2);
       DrawMesh(meshSphere, matDebug, mono.player.pos, Quaternion.identity, mono.player.radius / 2);
       DrawMesh(meshSphere, matDebug, mono.gem.pos, Quaternion.identity, mono.gem.radius / 2);
       for (int i = 0; i < mono.enemies.Count; i++)
