@@ -360,7 +360,7 @@ public class Render
   Monolith mono;
 
   public Material matDefault, matOriel, matDebug;
-  public Mesh meshCube, meshSphere, meshOriel, meshWorld, meshGem, meshTree, meshPlayer, meshEnemy;
+  public Mesh meshCube, meshSphere, meshOriel, meshWorld, meshGem, meshTree, meshPlayer, meshEnemy, meshCursor;
 
   public void Start(Monolith mono)
   {
@@ -377,7 +377,7 @@ public class Render
 
     DrawMesh(meshWorld, matDefault, Vector3.zero, Quaternion.identity, 0.01f);
 
-    DrawMesh(meshCube, matDefault, mono.cursor, Quaternion.identity, 0.02f);
+    DrawMesh(meshCursor, matDefault, mono.cursor, Quaternion.identity, 0.02f);
 
     DrawMesh(meshPlayer, matDefault, mono.player.pos, Quaternion.LookRotation(mono.player.dir), 0.02f);
 
@@ -386,13 +386,13 @@ public class Render
     for (int i = 0; i < mono.trees.Count; i++)
     {
       DrawMesh(meshTree, matDefault, 
-        mono.trees[i], Quaternion.LookRotation(mono.trees[i]), 0.004f);
+        mono.trees[i], Quaternion.LookRotation(mono.trees[i]), 0.003f);
     }
 
     for (int i = 0; i < mono.enemies.Count; i++)
     {
       DrawMesh(meshEnemy, matDefault,
-        mono.enemies[i].pos, Quaternion.LookRotation(mono.enemies[i].dir), 0.005f);
+        mono.enemies[i].pos, Quaternion.LookRotation(mono.enemies[i].dir), 0.015f);
     }
 
     if (true)
