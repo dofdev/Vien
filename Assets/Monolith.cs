@@ -159,7 +159,7 @@ public class Player : Detect
     pos = Vector3.zero;
     dir = Vector3.back;
     radius = 0.02f;
-    followDist = 0.06f;
+    followDist = 0.09f;
   }
 
   public void Update()
@@ -298,7 +298,7 @@ public class Rig
   {
     this.mono = mono;
 
-    offset = new Vector3(0, 0.1f, -1.3f);
+    offset = new Vector3(0, 0.1f, -1.5f);
     scale = 2;
   }
 
@@ -557,3 +557,22 @@ public class Music
     srcGame.volume = Mathf.Lerp(srcGame.volume, gameVol, Time.deltaTime / 3);
   }
 }
+
+// center player
+// trail
+
+// dont want to have to look in the corner of the screen
+
+// more comfortable range for stretch cursor
+// line from hand to cursos
+// stretchy line between hands
+// hanger mesh
+
+// swap hands
+// cursor coming out at a bad angle
+
+// everything needs to be slower
+
+// green planet ?
+
+// stars white red yellow fade/flicker
