@@ -383,7 +383,7 @@ public class Render
     for (int i = 0; i < mono.trees.Count; i++)
     {
       DrawMesh(meshTree, matDefault, 
-        mono.trees[i], Quaternion.LookRotation(mono.trees[i]), 0.01f);
+        mono.trees[i], Quaternion.LookRotation(mono.trees[i]), 0.005f);
     }
 
     for (int i = 0; i < mono.enemies.Count; i++)
