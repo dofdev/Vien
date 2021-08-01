@@ -26,7 +26,7 @@ RenderSettings:
   m_AmbientIntensity: 1
   m_AmbientMode: 0
   m_SubtractiveShadowColor: {r: 0.42, g: 0.478, b: 0.627, a: 1}
-  m_SkyboxMaterial: {fileID: 10304, guid: 0000000000000000f000000000000000, type: 0}
+  m_SkyboxMaterial: {fileID: 2100000, guid: fc3e531aba4b606489ad722fd5b9f11f, type: 2}
   m_HaloStrength: 0.5
   m_FlareStrength: 1
   m_FlareFadeSpeed: 3
@@ -38,7 +38,7 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 0}
-  m_IndirectSpecularColor: {r: 0.44657898, g: 0.4964133, b: 0.5748178, a: 1}
+  m_IndirectSpecularColor: {r: 0.0161209, g: 0.019020723, b: 0.024608016, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
@@ -369,9 +369,10 @@ MonoBehaviour:
     matDefault: {fileID: -3846018093981099296, guid: 212bfce1e68be3c4080cf849d8c7717d, type: 3}
     meshCube: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
     meshOriel: {fileID: -9071155252399151903, guid: 3646ec57db738b248b6cce82bcbfa330, type: 3}
-    meshWorld: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
-    meshGem: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+    meshWorld: {fileID: -2780908442749711973, guid: 4a251bcd1437bbc46b31ad17f3b60985, type: 3}
+    meshGem: {fileID: 8319830112727845735, guid: 4a251bcd1437bbc46b31ad17f3b60985, type: 3}
     meshPlayer: {fileID: -7342342714908519076, guid: 212bfce1e68be3c4080cf849d8c7717d, type: 3}
+    meshEnemy: {fileID: 2665125691307162770, guid: 212bfce1e68be3c4080cf849d8c7717d, type: 3}
   oriel: {x: 1, y: 0.666, z: 0.666}
   cursor: {x: 0, y: 0, z: 0}
-  safeRadius: 0.2
+  safeRadius: 0.01
