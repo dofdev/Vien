@@ -12,6 +12,7 @@ public class Monolith : MonoBehaviour
   public Rig rig;
   public Player player;
   public Gem gem;
+  public List<Vector3> trees = new List<Vector3>();
   public List<Enemy> enemies = new List<Enemy>();
   public Render render;
 
@@ -167,6 +168,8 @@ public class Gem
 
       if (pos.magnitude < mono.safeRadius)
       {
+        mono.trees.Add(pos);
+
         Enemy enemy = new Enemy();
         enemy.Start(mono);
         mono.enemies.Add(enemy);
@@ -335,7 +338,7 @@ public class Render
   Monolith mono;
 
   public Material matDefault, matOriel;
-  public Mesh meshCube, meshOriel, meshWorld, meshGem, meshPlayer, meshEnemy;
+  public Mesh meshCube, meshOriel, meshWorld, meshGem, meshTree, meshPlayer, meshEnemy;
 
   public void Start(Monolith mono)
   {
@@ -357,6 +360,12 @@ public class Render
     DrawMesh(meshPlayer, matDefault, mono.player.pos, Quaternion.LookRotation(mono.player.dir), 0.02f);
 
     DrawMesh(meshGem, matDefault, mono.gem.pos, Quaternion.identity, 0.02f);
+
+    for (int i = 0; i < mono.trees.Count; i++)
+    {
+      DrawMesh(meshTree, matDefault, 
+        mono.trees[i], Quaternion.LookRotation(mono.trees[i]), 0.01f);
+    }
 
     for (int i = 0; i < mono.enemies.Count; i++)
     {
