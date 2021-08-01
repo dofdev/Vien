@@ -103,6 +103,9 @@ public class Detect
   {
     return Vector3.Distance(pos, other.pos) <= radius + other.radius;
   }
+
+  // Bounds bounds = new Bounds(Vector3.zero, Vector3.one * scale * 0.5f);
+  // bounds.Intersects(bounds);
 }
 
 [Serializable]
@@ -296,12 +299,12 @@ public class Rig
       rHand.button.Set(rCon.TryGetChildControl("primarybutton").IsPressed());
     }
 
-    // stretch cursor
-    float stretch = Vector3.Distance(lHand.pos, rHand.pos);
-    mono.cursor = rHand.pos + rHand.rot * Quaternion.Euler(45, 0, 0) * Vector3.forward * stretch * 3;
-
-    // Bounds bounds = new Bounds(Vector3.zero, Vector3.one * scale * 0.5f);
-    // bounds.Intersects(bounds);
+    if (hmd != null)
+    {
+      // stretch cursor
+      float stretch = Vector3.Distance(lHand.pos, rHand.pos);
+      mono.cursor = rHand.pos + rHand.rot * Quaternion.Euler(45, 0, 0) * Vector3.forward * stretch * 3;
+    }
   }
 
   public Vector3 Pivot(Vector3 pos, Vector3 pivot, Quaternion rot)
