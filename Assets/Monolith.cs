@@ -96,7 +96,7 @@ public class Player
 {
   Monolith mono;
 
-  public Vector3 pos;
+  public Vector3 pos, dir;
   public float followDist = 0.06f;
 
   public void Start(Monolith mono)
@@ -104,6 +104,7 @@ public class Player
     this.mono = mono;
 
     pos = Vector3.zero;
+    dir = Vector3.back;
   }
 
   public void Update()
@@ -122,6 +123,8 @@ public class Player
         pos = newPos;
       }
     }
+
+    dir = (mono.cursor - pos).normalized;
   }
 }
 
@@ -225,6 +228,7 @@ public class Rig
   public PhysicalInput lHand, rHand;
 
   public Vector3 offset;
+  public float scale = 1.0f;
 
   public void Start(Monolith mono)
   {
@@ -234,18 +238,28 @@ public class Rig
   public List<InputDevice> devices = new List<InputDevice>();
   public void Update()
   {
+    Vector3 rigPos = Vector3.zero;
+    Quaternion rigRot = Quaternion.identity;
+
     XRHMD hmd = InputSystem.GetDevice<XRHMD>();
     if (hmd != null)
     {
-      cam.transform.position = offset + hmd.centerEyePosition.ReadValue();
-      cam.transform.rotation = hmd.centerEyeRotation.ReadValue();
+      Vector3 headPos = hmd.centerEyePosition.ReadValue() * 2;
+      Quaternion headRot = hmd.centerEyeRotation.ReadValue();
+
+      rigPos = -headPos + offset;
+      // rigRot = headRot;
+
+      cam.transform.position = Pivot(headPos, rigPos, rigRot);
+      cam.transform.rotation = rigRot * headRot;
+      cam.transform.localScale = Vector3.one * scale;
     }
 
     XRController lCon = XRController.leftHand;
     if (lCon != null)
     {
-      lHand.pos = offset + lCon.devicePosition.ReadValue();
-      lHand.rot = lCon.deviceRotation.ReadValue();
+      lHand.pos = Pivot(lCon.devicePosition.ReadValue() * scale, rigPos, rigRot);
+      lHand.rot = rigRot * lCon.deviceRotation.ReadValue();
 
       lHand.button.Set(lCon.TryGetChildControl("primarybutton").IsPressed());
 
@@ -259,13 +273,21 @@ public class Rig
     XRController rCon = XRController.rightHand;
     if (rCon != null)
     {
-      rHand.pos = offset + rCon.devicePosition.ReadValue();
-      rHand.rot = rCon.deviceRotation.ReadValue();
+      rHand.pos = Pivot(rCon.devicePosition.ReadValue() * scale, rigPos, rigRot);
+      rHand.rot = rigRot * rCon.deviceRotation.ReadValue();
 
       rHand.button.Set(rCon.TryGetChildControl("primarybutton").IsPressed());
     }
 
     mono.cursor = rHand.pos;
+  }
+
+  public Vector3 Pivot(Vector3 pos, Vector3 pivot, Quaternion rot)
+  {
+    Vector3 dir = pos - pivot;
+    dir = rot * dir;
+    pos = dir + pivot;
+    return pivot + pos;
   }
 }
 
@@ -312,7 +334,7 @@ public class Render
 {
   Monolith mono;
 
-  public Material matDefault;
+  public Material matDefault, matOriel;
   public Mesh meshCube, meshOriel, meshWorld, meshGem, meshPlayer, meshEnemy;
 
   public void Start(Monolith mono)
@@ -326,13 +348,13 @@ public class Render
     DrawMesh(meshCube, matDefault, mono.rig.rHand.pos, mono.rig.rHand.rot, 0.03f);
 
     m4.SetTRS(Vector3.zero, Quaternion.identity, mono.oriel);
-    Graphics.DrawMesh(meshOriel, m4, matDefault, 0);
+    Graphics.DrawMesh(meshOriel, m4, matOriel, 0);
 
-    DrawMesh(meshWorld, matDefault, Vector3.zero, Quaternion.identity, mono.safeRadius);
+    DrawMesh(meshWorld, matDefault, Vector3.zero, Quaternion.identity, 0.01f);
 
     DrawMesh(meshCube, matDefault, mono.cursor, Quaternion.identity, 0.02f);
 
-    DrawMesh(meshPlayer, matDefault, mono.player.pos, Quaternion.identity, 0.02f);
+    DrawMesh(meshPlayer, matDefault, mono.player.pos, Quaternion.LookRotation(mono.player.dir), 0.02f);
 
     DrawMesh(meshGem, matDefault, mono.gem.pos, Quaternion.identity, 0.02f);
 
