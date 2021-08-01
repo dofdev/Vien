@@ -39,6 +39,7 @@ public class Monolith : MonoBehaviour
     textMesh.verticalAlignment = VerticalAlignmentOptions.Middle;
     textMesh.fontSize = 1;
 
+    render.Start(this);
     sfx.Start(this);
     music.Start(this);
   }
@@ -52,8 +53,6 @@ public class Monolith : MonoBehaviour
 
     player.Start(this);
     gem.Start(this);
-
-    render.Start(this);
 
     textMesh.text = "START";
   }
@@ -151,6 +150,8 @@ public class Player : Detect
   public Vector3 dir;
   [HideInInspector]
   public float followDist;
+  [HideInInspector]
+  public float speed;
 
   public void Start(Monolith mono)
   {
@@ -160,19 +161,16 @@ public class Player : Detect
     dir = Vector3.back;
     radius = 0.02f;
     followDist = 0.09f;
+    speed = 0.3f;
   }
 
   public void Update()
   {
     if (Vector3.Distance(mono.cursor, pos) > followDist)
     {
-      float speed = 0.5f;
       // slower inside safeRadius
-      if (pos.magnitude < mono.safeRadius)
-      {
-        speed *= 0.5f;
-      }
-      Vector3 newPos = pos + (mono.cursor - pos).normalized * speed * Time.deltaTime;
+      float slow = pos.magnitude < mono.safeRadius ? 0.5f : 1;
+      Vector3 newPos = pos + (mono.cursor - pos).normalized * speed * slow * Time.deltaTime;
       if (mono.OutOfBounds(newPos) == Vector3.zero)
       {
         pos = newPos;
@@ -262,12 +260,11 @@ public class Enemy : Detect
   public void Update()
   {
     // move forward
-    pos += dir * 0.25f * Time.deltaTime;
+    pos += dir * mono.player.speed * 0.5f * Time.deltaTime;
     Vector3 normal = mono.OutOfBounds(pos);
     if (normal != Vector3.zero && Vector3.Angle(normal, dir) > 90)
     {
       dir = Vector3.Reflect(dir, normal);
-      // pos += rot * Vector3.forward * 0.25f * Time.deltaTime;
     }
     else
     {
@@ -275,7 +272,7 @@ public class Enemy : Detect
       if (pos.magnitude < mono.safeRadius)
       {
         dir = Vector3.Reflect(dir, pos.normalized);
-        pos += dir * 0.25f * Time.deltaTime;
+        pos += dir * mono.player.speed * 0.5f * Time.deltaTime;
       }
     }
   }
@@ -406,7 +403,7 @@ public class Render
 {
   Monolith mono;
 
-  public Material matDefault, matOriel, matDebug;
+  public Material matDefault, matOriel, matDebug, matPS;
   public Mesh meshCube, meshSphere, meshOriel, meshWorld, meshGem, meshTree, meshPlayer, meshEnemy, meshCursor;
 
   Quaternion planetRot = Quaternion.identity;
@@ -414,6 +411,9 @@ public class Render
   public void Start(Monolith mono)
   {
     this.mono = mono;
+
+    // ParticleSystem ps = mono.gameObject.AddComponent<ParticleSystem>();
+    // ps
   }
 
   public void Update()
@@ -539,7 +539,7 @@ public class Music
     srcMenu.loop = true;
     srcMenu.volume = 0;
     srcMenu.Play();
-    
+
     newSrc = new GameObject();
     srcGame = newSrc.AddComponent<AudioSource>();
     srcGame.clip = Resources.Load<AudioClip>("game");
@@ -557,22 +557,3 @@ public class Music
     srcGame.volume = Mathf.Lerp(srcGame.volume, gameVol, Time.deltaTime / 3);
   }
 }
-
-// center player
-// trail
-
-// dont want to have to look in the corner of the screen
-
-// more comfortable range for stretch cursor
-// line from hand to cursos
-// stretchy line between hands
-// hanger mesh
-
-// swap hands
-// cursor coming out at a bad angle
-
-// everything needs to be slower
-
-// green planet ?
-
-// stars white red yellow fade/flicker
