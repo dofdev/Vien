@@ -368,13 +368,13 @@ public class Render
     for (int i = 0; i < mono.trees.Count; i++)
     {
       DrawMesh(meshTree, matDefault, 
-        mono.trees[i], Quaternion.LookRotation(mono.trees[i]), 0.005f);
+        mono.trees[i], Quaternion.LookRotation(mono.trees[i]), 0.004f);
     }
 
     for (int i = 0; i < mono.enemies.Count; i++)
     {
       DrawMesh(meshEnemy, matDefault,
-        mono.enemies[i].pos, Quaternion.LookRotation(mono.enemies[i].dir), 0.01f);
+        mono.enemies[i].pos, Quaternion.LookRotation(mono.enemies[i].dir), 0.005f);
     }
   }
   Matrix4x4 m4 = new Matrix4x4();
