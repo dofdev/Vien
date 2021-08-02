@@ -48,7 +48,12 @@ public class Monolith : MonoBehaviour
   void Start()
   {
     trees.Clear();
+    for (int i = 0; i < enemies.Count; i++)
+    {
+      enemies[i].Stop();
+    }
     enemies.Clear();
+    player.Stop();
 
     player.Start(this);
     gem.Start(this);
@@ -83,6 +88,7 @@ public class Monolith : MonoBehaviour
         {
           textMesh.text = trees.Count + " <br>RESET?";
           sfx.Play("gameover");
+          sfx.Play("explosion");
           playing = false;
           // alternative ending is where all the enemies target what spawned them, and phase out
         }
@@ -152,6 +158,7 @@ public class Player : Detect
   [HideInInspector]
   public float speed;
 
+  TrailRenderer trail;
   public void Start(Monolith mono)
   {
     this.mono = mono;
@@ -161,20 +168,56 @@ public class Player : Detect
     radius = 0.02f;
     followDist = 0.09f;
     speed = 0.3f;
+
+    GameObject newObj = new GameObject();
+    newObj.transform.position = pos;
+    trail = newObj.AddComponent<TrailRenderer>();
+    trail.startWidth = 2;
+    trail.endWidth = 1;
+    trail.widthMultiplier = radius;
+    trail.time = 3f;
+    trail.minVertexDistance = 0.02f;
+    trail.startColor = new Color(0.05f, 0.05f, 0.05f, 1);
+    trail.endColor = Color.black;
+    trail.material = mono.render.matPS;
   }
 
+  public void Stop()
+  {
+    if (trail != null)
+    {
+      GameObject.Destroy(trail.gameObject);
+    }
+  }
+
+  bool inside = false;
   public void Update()
   {
     if (Vector3.Distance(mono.cursor, pos) > followDist)
     {
       // slower inside safeRadius
-      float slow = pos.magnitude < mono.safeRadius ? 0.5f : 1;
+      float slow = 1;
+      if (pos.magnitude < mono.safeRadius)
+      {
+        if (!inside)
+        {
+          mono.sfx.Play("splash");
+          inside = true;
+        }
+        slow = 0.5f;
+      }
+      else
+      {
+        inside = false;
+      }
       Vector3 newPos = pos + (mono.cursor - pos).normalized * speed * slow * Time.deltaTime;
       if (mono.OutOfBounds(newPos) == Vector3.zero)
       {
         pos = newPos;
       }
     }
+
+    trail.transform.position = pos;
 
     dir = (mono.cursor - pos).normalized;
   }
@@ -242,6 +285,7 @@ public class Enemy : Detect
 
   public Vector3 dir;
 
+  TrailRenderer trail;
   public void Start(Monolith mono)
   {
     this.mono = mono;
@@ -254,6 +298,23 @@ public class Enemy : Detect
     pos.y = Mathf.Clamp(pos.y, (-mono.oriel.y / 2) + radius * 2, (mono.oriel.y / 2) - radius * 2);
     pos.z = Mathf.Clamp(pos.z, (-mono.oriel.z / 2) + radius * 2, (mono.oriel.z / 2) - radius * 2);
     dir = Random.rotation * Vector3.forward;
+
+    GameObject newObj = new GameObject();
+    newObj.transform.position = pos;
+    trail = newObj.AddComponent<TrailRenderer>();
+    trail.startWidth = 2;
+    trail.endWidth = 1;
+    trail.widthMultiplier = radius;
+    trail.time = 3f;
+    trail.minVertexDistance = 0.02f;
+    trail.startColor = new Color(0.05f, 0.05f, 0.05f, 1);
+    trail.endColor = Color.black;
+    trail.material = mono.render.matPS;
+  }
+
+  public void Stop()
+  {
+    GameObject.Destroy(trail.gameObject);
   }
 
   public void Update()
@@ -274,6 +335,8 @@ public class Enemy : Detect
         pos += dir * mono.player.speed * 0.5f * Time.deltaTime;
       }
     }
+
+    trail.transform.position = pos;
   }
 }
 
@@ -295,17 +358,18 @@ public class Rig
   {
     this.mono = mono;
 
-    offset = new Vector3(0, 0.1f, -1.6f);
+    offset = new Vector3(0, 0.1f, -1.8f);
     scale = 2;
 
-    lineCursor = mono.gameObject.AddComponent<LineRenderer>();
+    GameObject newObj = new GameObject();
+    lineCursor = newObj.AddComponent<LineRenderer>();
     lineCursor.widthMultiplier = 0.006f;
     lineCursor.material = mono.render.matDebug;
     // lineStretch = mono.gameObject.AddComponent<LineRenderer>();
   }
 
   Vector3 cursorDir = Vector3.forward;
-  float cursorDist = 1.5f;
+  float cursorDist = 0f;
   float stretchMid = 0.67f;
   float stretchScale = 3;
   bool lefty = false;
@@ -357,11 +421,13 @@ public class Rig
       bool recalibrate = false;
       if (lHand.button.down)
       {
+        mono.sfx.Play("button");
         lefty = true;
         recalibrate = true;
       }
       if (rHand.button.down)
       {
+        mono.sfx.Play("button");
         lefty = false;
         recalibrate = true;
       }
@@ -530,12 +596,7 @@ public class SFX
       srcs.Add(newSrc);
     }
 
-    // tree = Resources.Load<AudioClip>("SFX/" + "tree");
     clips = Resources.LoadAll<AudioClip>("SFX/");
-    for (int i = 0; i < clips.Length; i++)
-    {
-      Debug.Log(clips[i].name);
-    }
   }
 
   public void Update()
