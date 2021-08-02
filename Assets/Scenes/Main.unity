@@ -375,7 +375,7 @@ MonoBehaviour:
     matDefault: {fileID: 2100000, guid: 91309002ecd29ad42b6c6cf7a7d99c4a, type: 2}
     matOriel: {fileID: 2100000, guid: 195231565fac58142afedfd91d21fde0, type: 2}
     matDebug: {fileID: 2100000, guid: f1b5cf34da6a89949bf813fcdc645e42, type: 2}
-    matPS: {fileID: 0}
+    matPS: {fileID: 2100000, guid: 73919f780ba963d40b0e14291d7bc42b, type: 2}
     meshCube: {fileID: 1978567263064991462, guid: 59130073981da984da6e18c1843a8127, type: 3}
     meshSphere: {fileID: 3894885956596533009, guid: bd4492b9c7c875141bd71525067b2abe, type: 3}
     meshOriel: {fileID: -9071155252399151903, guid: 3646ec57db738b248b6cce82bcbfa330, type: 3}
