@@ -547,7 +547,7 @@ public class Render
     {
       mono.trees[i] = planetTurn * mono.trees[i];
       DrawMesh(meshTree, matDefault,
-        mono.trees[i], Quaternion.LookRotation(mono.trees[i]), 0.003f);
+        mono.trees[i], Quaternion.LookRotation(mono.trees[i]), 0.005f);
     }
 
     for (int i = 0; i < mono.enemies.Count; i++)
