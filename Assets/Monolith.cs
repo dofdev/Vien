@@ -365,7 +365,10 @@ public class Rig
     lineCursor = newObj.AddComponent<LineRenderer>();
     lineCursor.widthMultiplier = 0.006f;
     lineCursor.material = mono.render.matDebug;
-    // lineStretch = mono.gameObject.AddComponent<LineRenderer>();
+
+    newObj = new GameObject();
+    lineStretch = newObj.AddComponent<LineRenderer>();
+    lineStretch.material = mono.render.matDebug;
   }
 
   Vector3 cursorDir = Vector3.forward;
@@ -449,9 +452,9 @@ public class Rig
       }
 
       float stretch = handDist - stretchMid;
-      // lineStretch.SetPosition(0, offHand.pos);
-      // lineStretch.SetPosition(1, mainHand.pos);
-      // lineStretch.widthMultiplier = 0.1f * ((stretchMid * 2) - Mathf.Clamp(handDist, 0.1f, stretchMid * 2));
+      lineStretch.SetPosition(0, offHand.pos);
+      lineStretch.SetPosition(1, mainHand.pos);
+      lineStretch.widthMultiplier = 0.03f * ((stretchMid * 3) - Mathf.Clamp(handDist, 0, (stretchMid * 3) - 0.1f));
 
       mono.cursor = mainHand.pos + mainHand.rot * cursorDir * (cursorDist + (stretch * stretchScale));
       lineCursor.SetPosition(0, mono.cursor);
@@ -520,8 +523,26 @@ public class Render
   {
     this.mono = mono;
 
-    // ParticleSystem ps = mono.gameObject.AddComponent<ParticleSystem>();
-    // ps
+    ParticleSystem ps = mono.gameObject.AddComponent<ParticleSystem>();
+    ParticleSystem.ShapeModule shape = ps.shape;
+    shape.shapeType = ParticleSystemShapeType.Box;
+    shape.scale = mono.oriel;
+    ParticleSystem.MainModule main = ps.main;
+    main.startSpeed = 0;
+    main.startSize = 0.001f;
+    // main.startColor.mode = ParticleSystemGradientMode.Gradient;
+    // ParticleSystem.MinMaxGradient gradient = main.startColor.gradient;
+    // gradient.mode = ParticleSystemGradientMode.Gradient;
+    // GradientColorKey[] keys = new GradientColorKey[2];
+    // keys[0] = new GradientColorKey(Color.red, 0);
+    // keys[1] = new GradientColorKey(Color.blue, 1);
+    // GradientAlphaKey[] alphaKeys = new GradientAlphaKey[2];
+    // alphaKeys[0] = new GradientAlphaKey(1, 0);
+    // alphaKeys[1] = new GradientAlphaKey(1, 1);
+    // gradient.SetKeys(keys, alphaKeys);
+    // main.startColor = gradient;
+    ParticleSystemRenderer psr = mono.gameObject.GetComponent<ParticleSystemRenderer>();
+    psr.material = matPS;
   }
 
   public void Update()
