@@ -30,7 +30,7 @@ public class Monolith : MonoBehaviour
   void Awake()
   {
     oriel = new Vector3(0.8f, 0.7f, 0.8f);
-    safeRadius = 0.12f;
+    safeRadius = 0.1f;
 
     GameObject go = new GameObject();
     go.transform.position = Vector3.back * oriel.z / 2;
@@ -172,8 +172,8 @@ public class Player : Detect
     GameObject newObj = new GameObject();
     newObj.transform.position = pos;
     trail = newObj.AddComponent<TrailRenderer>();
-    trail.startWidth = 2;
-    trail.endWidth = 1;
+    trail.startWidth = 1.5f;
+    trail.endWidth = 1f;
     trail.widthMultiplier = radius;
     trail.time = 3f;
     trail.minVertexDistance = 0.02f;
@@ -260,7 +260,7 @@ public class Gem : Detect
     }
     if (held)
     {
-      pos = mono.player.pos;
+      pos = mono.player.pos + Vector3.down * mono.player.radius * 2;
 
       if (pos.magnitude < mono.safeRadius)
       {
@@ -284,6 +284,7 @@ public class Enemy : Detect
   Monolith mono;
 
   public Vector3 dir;
+  public Quaternion rot;
 
   TrailRenderer trail;
   public void Start(Monolith mono)
@@ -302,15 +303,19 @@ public class Enemy : Detect
     GameObject newObj = new GameObject();
     newObj.transform.position = pos;
     trail = newObj.AddComponent<TrailRenderer>();
-    trail.startWidth = 2;
-    trail.endWidth = 1;
+    trail.startWidth = 1.5f;
+    trail.endWidth = 1f;
     trail.widthMultiplier = radius;
     trail.time = 3f;
     trail.minVertexDistance = 0.02f;
     trail.startColor = new Color(0.05f, 0.05f, 0.05f, 1);
     trail.endColor = Color.black;
     trail.material = mono.render.matPS;
+
+    rot = Random.rotation;
+    spin = Random.rotation * Vector3.forward;
   }
+  Vector3 spin = Vector3.forward;
 
   public void Stop()
   {
@@ -337,6 +342,7 @@ public class Enemy : Detect
     }
 
     trail.transform.position = pos;
+    rot *= Quaternion.Euler(spin * Time.deltaTime * 12);
   }
 }
 
@@ -365,7 +371,10 @@ public class Rig
     lineCursor = newObj.AddComponent<LineRenderer>();
     lineCursor.widthMultiplier = 0.006f;
     lineCursor.material = mono.render.matDebug;
-    // lineStretch = mono.gameObject.AddComponent<LineRenderer>();
+
+    newObj = new GameObject();
+    lineStretch = newObj.AddComponent<LineRenderer>();
+    lineStretch.material = mono.render.matDebug;
   }
 
   Vector3 cursorDir = Vector3.forward;
@@ -449,9 +458,9 @@ public class Rig
       }
 
       float stretch = handDist - stretchMid;
-      // lineStretch.SetPosition(0, offHand.pos);
-      // lineStretch.SetPosition(1, mainHand.pos);
-      // lineStretch.widthMultiplier = 0.1f * ((stretchMid * 2) - Mathf.Clamp(handDist, 0.1f, stretchMid * 2));
+      lineStretch.SetPosition(0, offHand.pos);
+      lineStretch.SetPosition(1, mainHand.pos);
+      lineStretch.widthMultiplier = 0.03f * ((stretchMid * 3) - Mathf.Clamp(handDist, 0, (stretchMid * 3) - 0.1f));
 
       mono.cursor = mainHand.pos + mainHand.rot * cursorDir * (cursorDist + (stretch * stretchScale));
       lineCursor.SetPosition(0, mono.cursor);
@@ -511,7 +520,7 @@ public class Render
 {
   Monolith mono;
 
-  public Material matDefault, matOriel, matDebug, matPS;
+  public Material matDefault, matOriel, matDebug, matPS, matWater;
   public Mesh meshCube, meshSphere, meshOriel, meshWorld, meshGem, meshTree, meshPlayer, meshEnemy, meshCursor;
 
   Quaternion planetRot = Quaternion.identity;
@@ -520,8 +529,26 @@ public class Render
   {
     this.mono = mono;
 
-    // ParticleSystem ps = mono.gameObject.AddComponent<ParticleSystem>();
-    // ps
+    ParticleSystem ps = mono.gameObject.AddComponent<ParticleSystem>();
+    ParticleSystem.ShapeModule shape = ps.shape;
+    shape.shapeType = ParticleSystemShapeType.Box;
+    shape.scale = mono.oriel;
+    ParticleSystem.MainModule main = ps.main;
+    main.startSpeed = 0;
+    main.startSize = 0.001f;
+    // main.startColor.mode = ParticleSystemGradientMode.Gradient;
+    // ParticleSystem.MinMaxGradient gradient = main.startColor.gradient;
+    // gradient.mode = ParticleSystemGradientMode.Gradient;
+    // GradientColorKey[] keys = new GradientColorKey[2];
+    // keys[0] = new GradientColorKey(Color.red, 0);
+    // keys[1] = new GradientColorKey(Color.blue, 1);
+    // GradientAlphaKey[] alphaKeys = new GradientAlphaKey[2];
+    // alphaKeys[0] = new GradientAlphaKey(1, 0);
+    // alphaKeys[1] = new GradientAlphaKey(1, 1);
+    // gradient.SetKeys(keys, alphaKeys);
+    // main.startColor = gradient;
+    ParticleSystemRenderer psr = mono.gameObject.GetComponent<ParticleSystemRenderer>();
+    psr.material = matPS;
   }
 
   public void Update()
@@ -536,6 +563,7 @@ public class Render
     Quaternion planetTurn = Quaternion.Euler(0, Time.deltaTime * -6, 0);
     planetRot *= planetTurn;
     DrawMesh(meshWorld, matDefault, Vector3.zero, planetRot, 0.01f);
+    DrawMesh(meshSphere, matWater, Vector3.zero, planetRot, 5f);
 
     DrawMesh(meshCursor, matDefault, mono.cursor, Quaternion.identity, 0.02f);
 
@@ -553,23 +581,23 @@ public class Render
     for (int i = 0; i < mono.enemies.Count; i++)
     {
       DrawMesh(meshEnemy, matDefault,
-        mono.enemies[i].pos, Quaternion.LookRotation(mono.enemies[i].dir), 0.015f);
+        mono.enemies[i].pos, Quaternion.LookRotation(mono.enemies[i].dir) * mono.enemies[i].rot, 0.015f);
     }
 
-    if (true)
-    {
-      DrawMesh(meshSphere, matDebug, Vector3.zero, Quaternion.identity, mono.safeRadius / 2);
-      // DrawMesh(meshSphere, matDebug, mono.cursor, Quaternion.identity, mono.player.followDist / 2);
-      DrawMesh(meshSphere, matDebug, mono.player.pos, Quaternion.identity, mono.player.radius / 2);
-      DrawMesh(meshSphere, matDebug, mono.gem.pos, Quaternion.identity, mono.gem.radius / 2);
-      for (int i = 0; i < mono.enemies.Count; i++)
-      {
-        DrawMesh(meshSphere, matDebug, mono.enemies[i].pos, Quaternion.identity, mono.enemies[i].radius / 2);
-      }
-    }
+    // if (true)
+    // {
+    //   DrawMesh(meshSphere, matDebug, Vector3.zero, Quaternion.identity, mono.safeRadius / 2);
+    //   // DrawMesh(meshSphere, matDebug, mono.cursor, Quaternion.identity, mono.player.followDist / 2);
+    //   DrawMesh(meshSphere, matDebug, mono.player.pos, Quaternion.identity, mono.player.radius / 2);
+    //   DrawMesh(meshSphere, matDebug, mono.gem.pos, Quaternion.identity, mono.gem.radius / 2);
+    //   for (int i = 0; i < mono.enemies.Count; i++)
+    //   {
+    //     DrawMesh(meshSphere, matDebug, mono.enemies[i].pos, Quaternion.identity, mono.enemies[i].radius / 2);
+    //   }
+    // }
   }
-  Matrix4x4 m4 = new Matrix4x4();
 
+  Matrix4x4 m4 = new Matrix4x4();
   void DrawMesh(Mesh mesh, Material mat, Vector3 pos, Quaternion rot, float scale)
   {
     m4.SetTRS(pos, rot.normalized, Vector3.one * scale);
