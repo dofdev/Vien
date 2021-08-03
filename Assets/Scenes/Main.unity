@@ -38,7 +38,7 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 0}
-  m_IndirectSpecularColor: {r: 0.016120879, g: 0.019020692, b: 0.024607986, a: 1}
+  m_IndirectSpecularColor: {r: 0, g: 0, b: 0, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
@@ -384,7 +384,7 @@ MonoBehaviour:
     meshGem: {fileID: 256412666039963641, guid: f74b7e3918ddde945be4fe7e4c55a1de, type: 3}
     meshTree: {fileID: 4025000115016143914, guid: 55e15e18bd7b21a43bbf017e1e8afc3f, type: 3}
     meshPlayer: {fileID: 9107807531863434886, guid: 648ff1480e42d2d4c91e3542f63d292d, type: 3}
-    meshEnemy: {fileID: 3634926235976907507, guid: 6aa3937fc6e36fd46adb0069b4e932e3, type: 3}
+    meshEnemy: {fileID: -7363874130871373781, guid: 648ff1480e42d2d4c91e3542f63d292d, type: 3}
     meshCursor: {fileID: 4575378312840820631, guid: 7a8e664ca6e0d124ab8f752eee706ac9, type: 3}
   textMesh: {fileID: 0}
   cursor: {x: 0, y: 0, z: 0}
