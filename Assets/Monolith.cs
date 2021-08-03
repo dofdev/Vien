@@ -1,9 +1,12 @@
 using System;
+using System.IO;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.XR;
+using UnityEditor.Recorder;
+using UnityEditor.Recorder.Input;
 using TMPro;
 
 using Random = UnityEngine.Random;
@@ -18,6 +21,7 @@ public class Monolith : MonoBehaviour
   public Render render;
   public SFX sfx;
   public Music music;
+  public ScreenCap screenCap;
   [HideInInspector]
   public TextMeshPro textMesh;
 
@@ -43,6 +47,7 @@ public class Monolith : MonoBehaviour
     render.Start(this);
     sfx.Start(this);
     music.Start(this);
+    screenCap.Start(this);
   }
 
   void Start()
@@ -72,6 +77,7 @@ public class Monolith : MonoBehaviour
       Mouse mouse = Mouse.current;
       if (rig.rHand.button.down || rig.lHand.button.down || (mouse != null && Mouse.current.leftButton.IsPressed()))
       {
+        sfx.Play("button");
         Start();
         textMesh.text = "";
         playing = true;
@@ -99,6 +105,7 @@ public class Monolith : MonoBehaviour
     render.Update();
     sfx.Update();
     music.Update();
+    screenCap.Update();
   }
 
   public Vector3 OutOfBounds(Vector3 pos)
@@ -201,7 +208,7 @@ public class Player : Detect
       {
         if (!inside)
         {
-          mono.sfx.Play("splash");
+          mono.sfx.Play("splash", 0.33f);
           inside = true;
         }
         slow = 0.5f;
@@ -408,6 +415,7 @@ public class Rig
       lHand.rot = rigRot * lCon.deviceRotation.ReadValue();
 
       lHand.button.Set(lCon.TryGetChildControl("triggerpressed").IsPressed());
+      lHand.altButton.Set(lCon.TryGetChildControl("primarybutton").IsPressed());
 
       // foreach (InputControl ic in lCon.children)
       // {
@@ -423,20 +431,19 @@ public class Rig
       rHand.rot = rigRot * rCon.deviceRotation.ReadValue();
 
       rHand.button.Set(rCon.TryGetChildControl("triggerpressed").IsPressed());
+      rHand.altButton.Set(rCon.TryGetChildControl("primarybutton").IsPressed());
     }
 
     if (hmd != null)
     {
       bool recalibrate = false;
-      if (lHand.button.down)
+      if (lHand.button.held)
       {
-        mono.sfx.Play("button");
         lefty = true;
         recalibrate = true;
       }
-      if (rHand.button.down)
+      if (rHand.button.held)
       {
-        mono.sfx.Play("button");
         lefty = false;
         recalibrate = true;
       }
@@ -483,7 +490,7 @@ public class PhysicalInput
   public Vector3 pos;
   public Quaternion rot;
 
-  public Btn button;
+  public Btn button, altButton;
 }
 
 [Serializable]
@@ -632,7 +639,7 @@ public class SFX
 
   }
 
-  public void Play(string name)
+  public void Play(string name, float volume = 1)
   {
     for (int i = 0; i < srcs.Count; i++)
     {
@@ -644,6 +651,7 @@ public class SFX
           if (name == clips[j].name)
           {
             src.clip = clips[j];
+            src.volume = volume;
             src.Play();
             return;
           }
@@ -686,5 +694,61 @@ public class Music
 
     float gameVol = mono.playing ? 1 : 0;
     srcGame.volume = Mathf.Lerp(srcGame.volume, gameVol, Time.deltaTime / 3);
+  }
+}
+
+[Serializable]
+public class ScreenCap
+{
+  Monolith mono;
+  RecorderController m_RecorderController;
+  // public RCSettings rcSettings;
+  // public IRSettings irSettings;
+
+  public void Start(Monolith mono)
+  {
+    this.mono = mono;
+    RecorderControllerSettingsPreset preset = Resources.Load<RecorderControllerSettingsPreset>("RCSettings");
+    RecorderControllerSettings settings = ScriptableObject.CreateInstance<RecorderControllerSettings>();
+    preset.ApplyTo(settings);
+    m_RecorderController = new RecorderController(settings);
+    // controllerSettings.AddRecorderSettings(irSettings);
+    // RecorderController
+
+    // var controllerSettings = ScriptableObject.CreateInstance<RecorderControllerSettings>();
+    // m_RecorderController = new RecorderController(controllerSettings);
+
+    // var mediaOutputFolder = Path.Combine(Application.dataPath, "..", "Screenshots");
+
+    // // Image
+    // var imageRecorder = ScriptableObject.CreateInstance<ImageRecorderSettings>();
+    // imageRecorder.name = "ScreenCap";
+    // imageRecorder.Enabled = true;
+    // imageRecorder.OutputFormat = ImageRecorderSettings.ImageRecorderOutputFormat.PNG;
+    // imageRecorder.CaptureAlpha = false;
+
+    // imageRecorder.OutputFile = Path.Combine(mediaOutputFolder, "image_") + DefaultWildcard.Take;
+
+    // imageRecorder.imageInputSettings = 
+
+    // // imageRecorder.
+    // imageRecorder.imageInputSettings = new GameViewInputSettings
+    // {
+    //   OutputWidth = 7680,
+    //   OutputHeight = 4320,
+    // };
+
+    // // Setup Recording
+    // controllerSettings.AddRecorderSettings(imageRecorder);
+    // controllerSettings.SetRecordModeToSingleFrame(0);
+  }
+
+  public void Update()
+  {
+    if (mono.rig.rHand.altButton.down)
+    {
+      m_RecorderController.PrepareRecording();
+      m_RecorderController.StartRecording();
+    }
   }
 }
