@@ -13,7 +13,7 @@ PlayerSettings:
   useOnDemandResources: 0
   accelerometerFrequency: 60
   companyName: dofdev
-  productName: VRGJ2021
+  productName: Vien
   defaultCursor: {fileID: 0}
   cursorHotspot: {x: 0, y: 0}
   m_SplashScreenBackgroundColor: {r: 0.13725491, g: 0.12156863, b: 0.1254902, a: 1}
@@ -127,12 +127,11 @@ PlayerSettings:
     16:10: 1
     16:9: 1
     Others: 1
-  bundleVersion: 0.1
+  bundleVersion: 1
   preloadedAssets:
   - {fileID: 11400000, guid: f2097165fe6351f48a697daa90aa70a2, type: 2}
   - {fileID: 11400000, guid: 9eb1addadafc8f54d9963b43eb5c2539, type: 2}
   - {fileID: -5564145331414886018, guid: aa929c1fb20a56244b4648e720dbc062, type: 2}
-  - {fileID: -5172511212962510983, guid: 3caf6519a02485443a00a2bee9600de5, type: 2}
   metroInputSource: 0
   wsaTransparentSwapchain: 0
   m_HolographicPauseOnTrackingLoss: 1
@@ -150,7 +149,7 @@ PlayerSettings:
   androidSupportedAspectRatio: 1
   androidMaxAspectRatio: 2.1
   applicationIdentifier:
-    Android: com.DefaultCompany.VRGJ2021
+    Android: com.dofdev.Vien
     Standalone: com.dofdev.VRGJ2021
   buildNumber:
     Standalone: 0
