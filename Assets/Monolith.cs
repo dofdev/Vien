@@ -5,8 +5,10 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.XR;
+#if UNITY_EDITOR
 using UnityEditor.Recorder;
 using UnityEditor.Recorder.Input;
+#endif
 using TMPro;
 
 using Random = UnityEngine.Random;
@@ -592,7 +594,7 @@ public class Render
     DrawMesh(meshPlayer, matDefault, mono.player.pos, Quaternion.LookRotation(mono.player.dir), 0.02f);
     DrawMesh(meshHeadlight, matPS, mono.player.pos, Quaternion.LookRotation(mono.player.dir), 0.02f);
 
-    DrawMesh(meshGem, matDefault, mono.gem.pos, 
+    DrawMesh(meshGem, matDefault, mono.gem.pos,
       Quaternion.Euler(Mathf.Sin(Time.time * 2) * 15, 0, Mathf.Sin(Time.time) * 15),
       0.01f * PopIn(mono.gem.scale)
     );
@@ -650,7 +652,7 @@ public class Render
     {
       return 1.25f;
     }
-    
+
     // grow
     // extend
     // settle
@@ -748,54 +750,30 @@ public class Music
 public class ScreenCap
 {
   Monolith mono;
+#if (UNITY_EDITOR)
   RecorderController m_RecorderController;
-  // public RCSettings rcSettings;
-  // public IRSettings irSettings;
+#endif
 
   public void Start(Monolith mono)
   {
     this.mono = mono;
+
+#if (UNITY_EDITOR)
     RecorderControllerSettingsPreset preset = Resources.Load<RecorderControllerSettingsPreset>("RCSettings");
     RecorderControllerSettings settings = ScriptableObject.CreateInstance<RecorderControllerSettings>();
     preset.ApplyTo(settings);
     m_RecorderController = new RecorderController(settings);
-    // controllerSettings.AddRecorderSettings(irSettings);
-    // RecorderController
-
-    // var controllerSettings = ScriptableObject.CreateInstance<RecorderControllerSettings>();
-    // m_RecorderController = new RecorderController(controllerSettings);
-
-    // var mediaOutputFolder = Path.Combine(Application.dataPath, "..", "Screenshots");
-
-    // // Image
-    // var imageRecorder = ScriptableObject.CreateInstance<ImageRecorderSettings>();
-    // imageRecorder.name = "ScreenCap";
-    // imageRecorder.Enabled = true;
-    // imageRecorder.OutputFormat = ImageRecorderSettings.ImageRecorderOutputFormat.PNG;
-    // imageRecorder.CaptureAlpha = false;
-
-    // imageRecorder.OutputFile = Path.Combine(mediaOutputFolder, "image_") + DefaultWildcard.Take;
-
-    // imageRecorder.imageInputSettings = 
-
-    // // imageRecorder.
-    // imageRecorder.imageInputSettings = new GameViewInputSettings
-    // {
-    //   OutputWidth = 7680,
-    //   OutputHeight = 4320,
-    // };
-
-    // // Setup Recording
-    // controllerSettings.AddRecorderSettings(imageRecorder);
-    // controllerSettings.SetRecordModeToSingleFrame(0);
+#endif
   }
 
   public void Update()
   {
+#if (UNITY_EDITOR)
     if (mono.rig.rHand.altButton.down)
     {
       m_RecorderController.PrepareRecording();
       m_RecorderController.StartRecording();
     }
+#endif
   }
 }
