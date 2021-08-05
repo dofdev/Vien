@@ -218,10 +218,13 @@ public class Player : Detect
         inside = false;
       }
       Vector3 newPos = pos + (mono.cursor - pos).normalized * speed * slow * Time.deltaTime;
-      if (mono.OutOfBounds(newPos) == Vector3.zero)
-      {
-        pos = newPos;
-      }
+      newPos.x = Mathf.Clamp(newPos.x, -mono.oriel.x / 2, mono.oriel.x / 2);
+      newPos.y = Mathf.Clamp(newPos.y, -mono.oriel.y / 2, mono.oriel.y / 2);
+      newPos.z = Mathf.Clamp(newPos.z, -mono.oriel.z / 2, mono.oriel.z / 2);
+      // if (mono.OutOfBounds(newPos) == Vector3.zero)
+      // {
+      // }
+      pos = newPos;
     }
 
     trail.transform.position = pos;
@@ -234,6 +237,8 @@ public class Player : Detect
 public class Gem : Detect
 {
   Monolith mono;
+
+  public float scale;
 
   public void Start(Monolith mono)
   {
@@ -255,19 +260,24 @@ public class Gem : Detect
         Random.Range(-mono.oriel.z / 2, mono.oriel.z / 2)
       );
     }
+    scale = 0;
   }
 
   bool held = false;
   public void Update()
   {
-    if (!held && Hit(mono.player))
+    if (!held)
     {
-      mono.sfx.Play("pickup");
-      held = true;
+      if (Hit(mono.player))
+      {
+        mono.sfx.Play("pickup");
+        held = true;
+      }
     }
     if (held)
     {
-      pos = mono.player.pos + Vector3.down * mono.player.radius * 2;
+      Vector3 targetPos = mono.player.pos + Quaternion.LookRotation(mono.player.dir) * new Vector3(0, -0.04f, 0.04f);
+      pos = Vector3.Lerp(pos, targetPos, 0.5f);
 
       if (pos.magnitude < mono.safeRadius)
       {
@@ -282,6 +292,7 @@ public class Gem : Detect
         held = false;
       }
     }
+    scale = Mathf.Clamp01(scale + Time.deltaTime * 3);
   }
 }
 
@@ -292,6 +303,7 @@ public class Enemy : Detect
 
   public Vector3 dir;
   public Quaternion rot;
+  public float scale;
 
   TrailRenderer trail;
   public void Start(Monolith mono)
@@ -320,7 +332,8 @@ public class Enemy : Detect
     trail.material = mono.render.matPS;
 
     rot = Random.rotation;
-    spin = Random.rotation * Vector3.forward;
+    spin = Random.rotation * Vector3.forward * Random.value;
+    scale = 0;
   }
   Vector3 spin = Vector3.forward;
 
@@ -349,7 +362,8 @@ public class Enemy : Detect
     }
 
     trail.transform.position = pos;
-    rot *= Quaternion.Euler(spin * Time.deltaTime * 12);
+    rot *= Quaternion.Euler(spin * Time.deltaTime * 120);
+    scale = Mathf.Clamp01(scale + Time.deltaTime * 3);
   }
 }
 
@@ -528,7 +542,8 @@ public class Render
   Monolith mono;
 
   public Material matDefault, matOriel, matDebug, matPS, matWater;
-  public Mesh meshCube, meshSphere, meshOriel, meshWorld, meshGem, meshTree, meshPlayer, meshEnemy, meshCursor;
+  public Mesh meshCube, meshSphere, meshOriel, meshWorld, meshGem, meshTree, meshPlayer, meshHeadlight, meshCursor;
+  public Mesh[] meshMeteors;
 
   Quaternion planetRot = Quaternion.identity;
 
@@ -575,8 +590,12 @@ public class Render
     DrawMesh(meshCursor, matDefault, mono.cursor, Quaternion.identity, 0.02f);
 
     DrawMesh(meshPlayer, matDefault, mono.player.pos, Quaternion.LookRotation(mono.player.dir), 0.02f);
+    DrawMesh(meshHeadlight, matPS, mono.player.pos, Quaternion.LookRotation(mono.player.dir), 0.02f);
 
-    DrawMesh(meshGem, matDefault, mono.gem.pos, Quaternion.identity, 0.01f);
+    DrawMesh(meshGem, matDefault, mono.gem.pos, 
+      Quaternion.Euler(Mathf.Sin(Time.time * 2) * 15, 0, Mathf.Sin(Time.time) * 15),
+      0.01f * PopIn(mono.gem.scale)
+    );
 
     for (int i = 0; i < mono.trees.Count; i++)
     {
@@ -587,8 +606,13 @@ public class Render
 
     for (int i = 0; i < mono.enemies.Count; i++)
     {
-      DrawMesh(meshEnemy, matDefault,
-        mono.enemies[i].pos, Quaternion.LookRotation(mono.enemies[i].dir) * mono.enemies[i].rot, 0.015f);
+      int meshIndex = i;
+      while (meshIndex > meshMeteors.Length - 1)
+      {
+        meshIndex -= meshMeteors.Length;
+      }
+      DrawMesh(meshMeteors[meshIndex], matDefault,
+        mono.enemies[i].pos, mono.enemies[i].rot, 0.015f * PopIn(mono.enemies[i].scale));
     }
 
     // if (true)
@@ -609,6 +633,29 @@ public class Render
   {
     m4.SetTRS(pos, rot.normalized, Vector3.one * scale);
     Graphics.DrawMesh(mesh, m4, mat, 0);
+  }
+
+  float PopIn(float scale)
+  {
+    // init
+    if (scale > 0 && scale < 0.333f)
+    {
+      return 0.25f;
+    }
+    if (scale >= 0.333f && scale < 0.666f)
+    {
+      return 0.75f;
+    }
+    if (scale >= 0.666f && scale < 1)
+    {
+      return 1.25f;
+    }
+    
+    // grow
+    // extend
+    // settle
+
+    return scale;
   }
 }
 

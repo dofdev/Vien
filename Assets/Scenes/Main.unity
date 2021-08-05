@@ -98,8 +98,7 @@ LightmapSettings:
     m_TrainingDataDestination: TrainingData
     m_LightProbeSampleCountMultiplier: 4
   m_LightingDataAsset: {fileID: 0}
-  m_LightingSettings: {fileID: 4890085278179872738, guid: 3fc2dcda98d9354448d365dab92011b2,
-    type: 2}
+  m_LightingSettings: {fileID: 4890085278179872738, guid: 3fc2dcda98d9354448d365dab92011b2, type: 2}
 --- !u!196 &4
 NavMeshSettings:
   serializedVersion: 2
@@ -203,7 +202,8 @@ Transform:
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: -1}
   m_LocalScale: {x: 1, y: 1, z: 1}
-  m_Children: [{fileID: 1838684246}]
+  m_Children:
+  - {fileID: 1838684246}
   m_Father: {fileID: 0}
   m_RootOrder: 2
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -460,26 +460,19 @@ MonoBehaviour:
     matDebug: {fileID: 2100000, guid: f1b5cf34da6a89949bf813fcdc645e42, type: 2}
     matPS: {fileID: 2100000, guid: 73919f780ba963d40b0e14291d7bc42b, type: 2}
     matWater: {fileID: 2100000, guid: 4c41ad0a9e514d34180880e253ec9930, type: 2}
-    meshCube: {fileID: 1978567263064991462, guid: 59130073981da984da6e18c1843a8127,
-      type: 3}
-    meshSphere: {fileID: 4528506144756645939, guid: 33bb250d6c0872d41990515e59d325d5,
-      type: 3}
-    meshOriel: {fileID: -9071155252399151903, guid: 3646ec57db738b248b6cce82bcbfa330,
-      type: 3}
-    meshWorld: {fileID: 805251607037718336, guid: 72ac9994556d66f458132098e713af7a,
-      type: 3}
-    meshGem: {fileID: 256412666039963641, guid: f74b7e3918ddde945be4fe7e4c55a1de,
-      type: 3}
-    meshTree: {fileID: 4025000115016143914, guid: 55e15e18bd7b21a43bbf017e1e8afc3f,
-      type: 3}
-    meshPlayer: {fileID: 9107807531863434886, guid: 648ff1480e42d2d4c91e3542f63d292d,
-      type: 3}
-    meshEnemy: {fileID: -7363874130871373781, guid: 648ff1480e42d2d4c91e3542f63d292d,
-      type: 3}
-    meshCursor: {fileID: 4575378312840820631, guid: 7a8e664ca6e0d124ab8f752eee706ac9,
-      type: 3}
-  screenCap:
-    settings: {fileID: 11400000, guid: 015cee207bf7d3b4a90aec4225f3a149, type: 2}
+    meshCube: {fileID: 1978567263064991462, guid: 59130073981da984da6e18c1843a8127, type: 3}
+    meshSphere: {fileID: 4528506144756645939, guid: 33bb250d6c0872d41990515e59d325d5, type: 3}
+    meshOriel: {fileID: -9071155252399151903, guid: 3646ec57db738b248b6cce82bcbfa330, type: 3}
+    meshWorld: {fileID: -3927413780413641385, guid: 4bbc5846b588a0744855d5473c102934, type: 3}
+    meshGem: {fileID: 256412666039963641, guid: f74b7e3918ddde945be4fe7e4c55a1de, type: 3}
+    meshTree: {fileID: 4025000115016143914, guid: 55e15e18bd7b21a43bbf017e1e8afc3f, type: 3}
+    meshPlayer: {fileID: 9107807531863434886, guid: 648ff1480e42d2d4c91e3542f63d292d, type: 3}
+    meshHeadlight: {fileID: 8737413314198800661, guid: 5899c9d938e88414c9f7be2095309aed, type: 3}
+    meshCursor: {fileID: 4575378312840820631, guid: 7a8e664ca6e0d124ab8f752eee706ac9, type: 3}
+    meshMeteors:
+    - {fileID: 3634926235976907507, guid: 6aa3937fc6e36fd46adb0069b4e932e3, type: 3}
+    - {fileID: -7363874130871373781, guid: 648ff1480e42d2d4c91e3542f63d292d, type: 3}
+    - {fileID: -8400989221946287625, guid: 648ff1480e42d2d4c91e3542f63d292d, type: 3}
   textMesh: {fileID: 0}
   cursor: {x: 0, y: 0, z: 0}
   oriel: {x: 1, y: 0.666, z: 1}
