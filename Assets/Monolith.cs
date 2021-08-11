@@ -207,10 +207,10 @@ public class Player : Detect
   bool inside = false;
   public void Update()
   {
+    // slower inside safeRadius
+    float slow = 1;
     if (Vector3.Distance(mono.cursor, pos) > followDist)
     {
-      // slower inside safeRadius
-      float slow = 1;
       if (pos.magnitude < mono.planetRadius)
       {
         if (!inside)
@@ -224,20 +224,20 @@ public class Player : Detect
       {
         inside = false;
       }
-      Vector3 newPos = pos + (mono.cursor - pos).normalized * speed * slow * Time.deltaTime;
+      // Vector3 newPos = pos + (mono.cursor - pos).normalized * speed * slow * Time.deltaTime;
+      // one to one then apply slow
+      newPos = mono.cursor + (pos - mono.cursor).normalized * followDist;
       newPos.x = Mathf.Clamp(newPos.x, -mono.oriel.x / 2, mono.oriel.x / 2);
       newPos.y = Mathf.Clamp(newPos.y, -mono.oriel.y / 2, mono.oriel.y / 2);
       newPos.z = Mathf.Clamp(newPos.z, -mono.oriel.z / 2, mono.oriel.z / 2);
-      // if (mono.OutOfBounds(newPos) == Vector3.zero)
-      // {
-      // }
-      pos = newPos;
     }
+    pos = Vector3.Lerp(pos, newPos, Time.deltaTime * 6 * slow);
 
     trail.transform.position = pos;
 
     dir = (mono.cursor - pos).normalized;
   }
+  Vector3 newPos = Vector3.zero;
 }
 
 [Serializable]
@@ -726,7 +726,7 @@ public class Render
       );
       // properties = new MaterialPropertyBlock();
       properties.SetColor("_Color", tree.color);
-      Graphics.DrawMesh(Mesh("Tree"), m4, Mat("Gem"), 0, null, 0, properties);
+      Graphics.DrawMesh(Mesh("Tree "), m4, Mat("Gem"), 0, null, 0, properties);
     }
 
     for (int i = 0; i < mono.enemies.Count; i++)
@@ -775,7 +775,7 @@ public class Render
         return materials[i];
       }
     }
-
+    Debug.LogWarning("Material not found: " + name);
     return null;
   }
 
@@ -788,7 +788,7 @@ public class Render
         return meshes[i];
       }
     }
-
+    Debug.LogWarning("Mesh not found: " + name);
     return null;
   }
 
