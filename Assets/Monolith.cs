@@ -273,11 +273,7 @@ public class Gem : Detect
 
     // set colors based on position (color cube: xyz -> rgb)
     // normalize based on oriel size
-    color = new Color(
-      (pos.x / mono.oriel.x) + 0.5f,
-      (pos.y / mono.oriel.y) + 0.5f,
-      (pos.z / mono.oriel.z) + 0.5f
-    );
+    
 
     // List<Color> colors = new List<Color>();
     // for (int i = 0; i < mono.render.meshGem.vertexCount; i++)
@@ -288,9 +284,32 @@ public class Gem : Detect
     // mono.render.meshGem.MarkModified();
   }
 
+  float SmoothStep(float value, int pow)
+  {
+    return Mathf.Lerp(FakePow(value, pow), 1 - FakePow(1 - value, pow), value);
+  }
+  float FakePow(float value, int pow)
+  {
+    for (int i = 1; i < pow; i++)
+    {
+      value *= value;
+    }
+    return value;
+  }
+
   bool held = false;
   public void Update()
   {
+    float r = (pos.x / mono.oriel.x) + 0.5f;
+    float g = (pos.y / mono.oriel.y) + 0.5f;
+    float b = (pos.z / mono.oriel.z) + 0.5f;
+    // Mathf.SmoothStep
+    color = Color.Lerp(
+      color,
+      new Color(SmoothStep(r, 6), SmoothStep(g, 6), SmoothStep(b, 6)),
+      Time.deltaTime * pos.magnitude
+    );
+    
     if (!held)
     {
       if (Hit(mono.player))
@@ -700,7 +719,9 @@ public class Render
     DrawMesh(Mesh("Cursor"), Mat("Default"), mono.cursor, Quaternion.identity, 0.02f);
 
     DrawMesh(Mesh("Bot for export no engons"), Mat("Default"), mono.player.pos, Quaternion.LookRotation(mono.player.dir), 0.015f);
-    DrawMesh(Mesh("headlights"), Mat("PS"), mono.player.pos, Quaternion.LookRotation(mono.player.dir), 0.015f);
+    if (mono.player.pos.magnitude > mono.safeRadius) {
+      DrawMesh(Mesh("headlights"), Mat("PS"), mono.player.pos, Quaternion.LookRotation(mono.player.dir), 0.015f);
+    }
 
     m4.SetTRS(
         mono.gem.pos,
