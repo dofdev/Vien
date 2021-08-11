@@ -5,8 +5,10 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.XR;
+#if UNITY_EDITOR
 using UnityEditor.Recorder;
 using UnityEditor.Recorder.Input;
+#endif
 using TMPro;
 
 using Random = UnityEngine.Random;
@@ -16,7 +18,7 @@ public class Monolith : MonoBehaviour
   public Rig rig;
   public Player player;
   public Gem gem;
-  public List<Vector3> trees = new List<Vector3>();
+  public List<Tree> trees = new List<Tree>();
   public List<Enemy> enemies = new List<Enemy>();
   public Render render;
   public SFX sfx;
@@ -25,16 +27,21 @@ public class Monolith : MonoBehaviour
   [HideInInspector]
   public TextMeshPro textMesh;
 
+  // public bool paid = false;
+
   public Vector3 cursor;
   [HideInInspector]
   public Vector3 oriel;
   [HideInInspector]
-  public float safeRadius = 0.2f;
+  public float safeRadius;
+  [HideInInspector]
+  public float planetRadius;
 
   void Awake()
   {
     oriel = new Vector3(0.8f, 0.7f, 0.8f);
-    safeRadius = 0.1f;
+    safeRadius = 0.145f;
+    planetRadius = 0.1f;
 
     GameObject go = new GameObject();
     go.transform.position = Vector3.back * oriel.z / 2;
@@ -43,8 +50,8 @@ public class Monolith : MonoBehaviour
     textMesh.verticalAlignment = VerticalAlignmentOptions.Middle;
     textMesh.fontSize = 1;
 
-    rig.Start(this);
     render.Start(this);
+    rig.Start(this);
     sfx.Start(this);
     music.Start(this);
     screenCap.Start(this);
@@ -174,7 +181,7 @@ public class Player : Detect
     dir = Vector3.back;
     radius = 0.02f;
     followDist = 0.09f;
-    speed = 0.3f;
+    speed = 0.2f;
 
     GameObject newObj = new GameObject();
     newObj.transform.position = pos;
@@ -186,7 +193,7 @@ public class Player : Detect
     trail.minVertexDistance = 0.02f;
     trail.startColor = new Color(0.05f, 0.05f, 0.05f, 1);
     trail.endColor = Color.black;
-    trail.material = mono.render.matPS;
+    trail.material = mono.render.Mat("PS");
   }
 
   public void Stop()
@@ -200,40 +207,46 @@ public class Player : Detect
   bool inside = false;
   public void Update()
   {
+    // slower inside safeRadius
+    float slow = 1;
     if (Vector3.Distance(mono.cursor, pos) > followDist)
     {
-      // slower inside safeRadius
-      float slow = 1;
-      if (pos.magnitude < mono.safeRadius)
+      if (pos.magnitude < mono.planetRadius)
       {
         if (!inside)
         {
           mono.sfx.Play("splash", 0.33f);
           inside = true;
         }
-        slow = 0.5f;
+        slow = 0.666f;
       }
       else
       {
         inside = false;
       }
-      Vector3 newPos = pos + (mono.cursor - pos).normalized * speed * slow * Time.deltaTime;
-      if (mono.OutOfBounds(newPos) == Vector3.zero)
-      {
-        pos = newPos;
-      }
+      // Vector3 newPos = pos + (mono.cursor - pos).normalized * speed * slow * Time.deltaTime;
+      // one to one then apply slow
+      newPos = mono.cursor + (pos - mono.cursor).normalized * followDist;
+      newPos.x = Mathf.Clamp(newPos.x, -mono.oriel.x / 2, mono.oriel.x / 2);
+      newPos.y = Mathf.Clamp(newPos.y, -mono.oriel.y / 2, mono.oriel.y / 2);
+      newPos.z = Mathf.Clamp(newPos.z, -mono.oriel.z / 2, mono.oriel.z / 2);
     }
+    pos = Vector3.Lerp(pos, newPos, Time.deltaTime * 6 * slow);
 
     trail.transform.position = pos;
 
     dir = (mono.cursor - pos).normalized;
   }
+  Vector3 newPos = Vector3.zero;
 }
 
 [Serializable]
 public class Gem : Detect
 {
   Monolith mono;
+
+  public float scale;
+  public Color color;
 
   public void Start(Monolith mono)
   {
@@ -255,33 +268,88 @@ public class Gem : Detect
         Random.Range(-mono.oriel.z / 2, mono.oriel.z / 2)
       );
     }
+    scale = 0;
+
+
+    // set colors based on position (color cube: xyz -> rgb)
+    // normalize based on oriel size
+    
+
+    // List<Color> colors = new List<Color>();
+    // for (int i = 0; i < mono.render.meshGem.vertexCount; i++)
+    // {
+    //   colors.Add(color);
+    // }
+    // mono.render.meshGem.SetColors(colors);
+    // mono.render.meshGem.MarkModified();
+  }
+
+  float SmoothStep(float value, int pow)
+  {
+    return Mathf.Lerp(FakePow(value, pow), 1 - FakePow(1 - value, pow), value);
+  }
+  float FakePow(float value, int pow)
+  {
+    for (int i = 1; i < pow; i++)
+    {
+      value *= value;
+    }
+    return value;
   }
 
   bool held = false;
   public void Update()
   {
-    if (!held && Hit(mono.player))
+    float r = (pos.x / mono.oriel.x) + 0.5f;
+    float g = (pos.y / mono.oriel.y) + 0.5f;
+    float b = (pos.z / mono.oriel.z) + 0.5f;
+    // Mathf.SmoothStep
+    color = Color.Lerp(
+      color,
+      new Color(SmoothStep(r, 6), SmoothStep(g, 6), SmoothStep(b, 6)),
+      Time.deltaTime * pos.magnitude
+    );
+    
+    if (!held)
     {
-      mono.sfx.Play("pickup");
-      held = true;
+      if (Hit(mono.player))
+      {
+        mono.sfx.Play("pickup");
+        held = true;
+      }
     }
     if (held)
     {
-      pos = mono.player.pos + Vector3.down * mono.player.radius * 2;
+      Vector3 targetPos = mono.player.pos + Quaternion.LookRotation(mono.player.dir) * new Vector3(0, -0.04f, 0.04f);
+      pos = Vector3.Lerp(pos, targetPos, 0.5f);
 
-      if (pos.magnitude < mono.safeRadius)
+      if (pos.magnitude < mono.planetRadius)
       {
         mono.sfx.Play("tree");
-        mono.trees.Add(pos);
+        mono.trees.Add(new Tree(pos, color));
 
         Enemy enemy = new Enemy();
-        enemy.Start(mono);
+        enemy.Start(mono, pos);
         mono.enemies.Add(enemy);
         Spawn();
 
         held = false;
       }
     }
+    scale = Mathf.Clamp01(scale + Time.deltaTime * 3);
+  }
+}
+
+[Serializable]
+public class Tree // : Detect
+{
+  public Vector3 pos;
+  public Color color;
+
+  public Tree(Vector3 pos, Color color)
+  {
+    this.pos = pos;
+    this.color = color;
   }
 }
 
@@ -292,47 +360,75 @@ public class Enemy : Detect
 
   public Vector3 dir;
   public Quaternion rot;
+  public float scale;
+  public Vector3[] pastPos;
 
-  TrailRenderer trail;
-  public void Start(Monolith mono)
+  // public Enemy() {}
+
+  // public Enemy(Monolith mono, Enemy other)
+  // {
+  //   this.mono = mono;
+  //   pos = other.pos;
+  //   radius = other.radius;
+  //   dir = other.dir;
+  //   rot = other.rot;
+  //   scale = other.scale;
+  // }
+
+  // TrailRenderer trail;
+  public void Start(Monolith mono, Vector3 spawnPos)
   {
     this.mono = mono;
 
     radius = 0.02f;
 
     // spawn out, then clamp in
-    pos = Random.rotation * Vector3.forward * mono.oriel.x * 2;
-    pos.x = Mathf.Clamp(pos.x, (-mono.oriel.x / 2) + radius * 2, (mono.oriel.x / 2) - radius * 2);
-    pos.y = Mathf.Clamp(pos.y, (-mono.oriel.y / 2) + radius * 2, (mono.oriel.y / 2) - radius * 2);
-    pos.z = Mathf.Clamp(pos.z, (-mono.oriel.z / 2) + radius * 2, (mono.oriel.z / 2) - radius * 2);
-    dir = Random.rotation * Vector3.forward;
+    // pos = Random.rotation * Vector3.forward * mono.oriel.x * 2;
+    // pos.x = Mathf.Clamp(pos.x, (-mono.oriel.x / 2) + radius * 2, (mono.oriel.x / 2) - radius * 2);
+    // pos.y = Mathf.Clamp(pos.y, (-mono.oriel.y / 2) + radius * 2, (mono.oriel.y / 2) - radius * 2);
+    // pos.z = Mathf.Clamp(pos.z, (-mono.oriel.z / 2) + radius * 2, (mono.oriel.z / 2) - radius * 2);
+    // dir = Random.rotation * Vector3.forward;
+    pos = spawnPos;
+    dir = spawnPos.normalized;
+    while (Hit(mono.player) || pos.magnitude < mono.safeRadius)
+    {
+      pos += dir * radius;
+    }
 
-    GameObject newObj = new GameObject();
-    newObj.transform.position = pos;
-    trail = newObj.AddComponent<TrailRenderer>();
-    trail.startWidth = 1.5f;
-    trail.endWidth = 1f;
-    trail.widthMultiplier = radius;
-    trail.time = 3f;
-    trail.minVertexDistance = 0.02f;
-    trail.startColor = new Color(0.05f, 0.05f, 0.05f, 1);
-    trail.endColor = Color.black;
-    trail.material = mono.render.matPS;
+    pastPos = new Vector3[5];
+    for (int i = 0; i < pastPos.Length; i++)
+    {
+      pastPos[i] = pos;
+    }
+
+    // GameObject newObj = new GameObject();
+    // newObj.transform.position = pos;
+    // trail = newObj.AddComponent<TrailRenderer>();
+    // trail.startWidth = 1.5f;
+    // trail.endWidth = 1f;
+    // trail.widthMultiplier = radius;
+    // trail.time = 3f;
+    // trail.minVertexDistance = 0.02f;
+    // trail.startColor = new Color(0.05f, 0.05f, 0.05f, 1);
+    // trail.endColor = Color.black;
+    // trail.material = mono.render.matPS;
 
     rot = Random.rotation;
-    spin = Random.rotation * Vector3.forward;
+    spin = Random.rotation * Vector3.forward * Random.value;
+    scale = 0;
   }
   Vector3 spin = Vector3.forward;
 
   public void Stop()
   {
-    GameObject.Destroy(trail.gameObject);
+    // GameObject.Destroy(trail.gameObject);
   }
 
+  float delay;
   public void Update()
   {
     // move forward
-    pos += dir * mono.player.speed * 0.5f * Time.deltaTime;
+    pos += dir * mono.player.speed * Time.deltaTime;
     Vector3 normal = mono.OutOfBounds(pos);
     if (normal != Vector3.zero && Vector3.Angle(normal, dir) > 90)
     {
@@ -344,12 +440,23 @@ public class Enemy : Detect
       if (pos.magnitude < mono.safeRadius)
       {
         dir = Vector3.Reflect(dir, pos.normalized);
-        pos += dir * mono.player.speed * 0.5f * Time.deltaTime;
+        pos += dir * mono.player.speed * Time.deltaTime;
       }
     }
 
-    trail.transform.position = pos;
-    rot *= Quaternion.Euler(spin * Time.deltaTime * 12);
+    if (Time.time >= delay)
+    {
+      for (int i = pastPos.Length - 1; i >= 0; i--)
+      {
+        pastPos[i] = pastPos[Mathf.Max(i - 1, 0)];
+      }
+      pastPos[0] = pos;
+      delay = Time.time + 0.333f;
+    }
+
+    // trail.transform.position = pos;
+    rot *= Quaternion.Euler(spin * Time.deltaTime * 120);
+    scale = Mathf.Clamp01(scale + Time.deltaTime * 3);
   }
 }
 
@@ -377,11 +484,11 @@ public class Rig
     GameObject newObj = new GameObject();
     lineCursor = newObj.AddComponent<LineRenderer>();
     lineCursor.widthMultiplier = 0.006f;
-    lineCursor.material = mono.render.matDebug;
+    lineCursor.material = mono.render.Mat("Debug");
 
-    newObj = new GameObject();
-    lineStretch = newObj.AddComponent<LineRenderer>();
-    lineStretch.material = mono.render.matDebug;
+    // newObj = new GameObject();
+    // lineStretch = newObj.AddComponent<LineRenderer>();
+    // lineStretch.material = mono.render.matDebug;
   }
 
   Vector3 cursorDir = Vector3.forward;
@@ -389,6 +496,9 @@ public class Rig
   float stretchMid = 0.67f;
   float stretchScale = 3;
   bool lefty = false;
+
+  float jitter = 3f;
+
   public void Update()
   {
     Vector3 rigPos = Vector3.zero;
@@ -399,11 +509,11 @@ public class Rig
     {
       Vector3 headPos = hmd.centerEyePosition.ReadValue() * 2;
       Quaternion headRot = hmd.centerEyeRotation.ReadValue();
-
+      // jitter *= -1;
+      // headRot *= Quaternion.Euler(0, jitter, 0);
       rigPos = -headPos + (headRot * offset);
-      // rigRot = headRot;
 
-      cam.transform.position = Pivot(headPos, rigPos, rigRot);
+      cam.transform.position = Parent(headPos, rigPos, rigRot);
       cam.transform.rotation = rigRot * headRot;
       cam.transform.localScale = Vector3.one * scale;
     }
@@ -411,7 +521,8 @@ public class Rig
     XRController lCon = XRController.leftHand;
     if (lCon != null)
     {
-      lHand.pos = Pivot(lCon.devicePosition.ReadValue() * scale, rigPos, rigRot);
+      lHand.localPos = lCon.devicePosition.ReadValue();
+      lHand.pos = Parent(lHand.localPos * scale, rigPos, rigRot);
       lHand.rot = rigRot * lCon.deviceRotation.ReadValue();
 
       lHand.button.Set(lCon.TryGetChildControl("triggerpressed").IsPressed());
@@ -427,7 +538,8 @@ public class Rig
     XRController rCon = XRController.rightHand;
     if (rCon != null)
     {
-      rHand.pos = Pivot(rCon.devicePosition.ReadValue() * scale, rigPos, rigRot);
+      rHand.localPos = rCon.devicePosition.ReadValue();
+      rHand.pos = Parent(rHand.localPos * scale, rigPos, rigRot);
       rHand.rot = rigRot * rCon.deviceRotation.ReadValue();
 
       rHand.button.Set(rCon.TryGetChildControl("triggerpressed").IsPressed());
@@ -459,23 +571,39 @@ public class Rig
       float handDist = Vector3.Distance(mainHand.pos, offHand.pos);
       if (recalibrate)
       {
-        cursorDir = Quaternion.Inverse(mainHand.rot) * -mainHand.pos.normalized;
-        cursorDist = mainHand.pos.magnitude;
-        stretchMid = handDist;
+        // cursorDir = Quaternion.Inverse(mainHand.rot) * -mainHand.pos.normalized;
+        // cursorDist = mainHand.pos.magnitude;
+        // stretchMid = handDist;
       }
 
-      float stretch = handDist - stretchMid;
-      lineStretch.SetPosition(0, offHand.pos);
-      lineStretch.SetPosition(1, mainHand.pos);
-      lineStretch.widthMultiplier = 0.03f * ((stretchMid * 3) - Mathf.Clamp(handDist, 0, (stretchMid * 3) - 0.1f));
+      // float stretch = handDist - stretchMid;
+      // lineStretch.SetPosition(0, offHand.pos);
+      // lineStretch.SetPosition(1, mainHand.pos);
+      // lineStretch.widthMultiplier = 0.03f * ((stretchMid * 3) - Mathf.Clamp(handDist, 0, (stretchMid * 3) - 0.1f));
 
-      mono.cursor = mainHand.pos + mainHand.rot * cursorDir * (cursorDist + (stretch * stretchScale));
+      // mono.cursor = mainHand.pos + mainHand.rot * cursorDir * (cursorDist + (stretch * stretchScale));
+
+
+      if (mainHand.button.down)
+      {
+        offsetCursor = mono.cursor - Parent(localCursor * scale, rigPos, rigRot);
+        lastPos = mainHand.localPos;
+      }
+      if (mainHand.button.held)
+      {
+        localCursor += (mainHand.localPos - lastPos) * 3;
+        mono.cursor = Parent(localCursor * scale, rigPos, rigRot) + offsetCursor;
+      }
+
       lineCursor.SetPosition(0, mono.cursor);
       lineCursor.SetPosition(1, mainHand.pos);
+
+      lastPos = mainHand.localPos;
     }
   }
+  Vector3 lastPos, localCursor, offsetCursor;
 
-  public Vector3 Pivot(Vector3 pos, Vector3 pivot, Quaternion rot)
+  public Vector3 Parent(Vector3 pos, Vector3 pivot, Quaternion rot)
   {
     Vector3 dir = pos - pivot;
     dir = rot * dir;
@@ -487,7 +615,7 @@ public class Rig
 [Serializable]
 public class PhysicalInput
 {
-  public Vector3 pos;
+  public Vector3 localPos, pos;
   public Quaternion rot;
 
   public Btn button, altButton;
@@ -527,14 +655,24 @@ public class Render
 {
   Monolith mono;
 
-  public Material matDefault, matOriel, matDebug, matPS, matWater;
-  public Mesh meshCube, meshSphere, meshOriel, meshWorld, meshGem, meshTree, meshPlayer, meshEnemy, meshCursor;
+  Material[] materials;
+  Mesh[] meshes;
+  public Mesh[] meshMeteors;
+  public LineRenderer orielLine;
 
   Quaternion planetRot = Quaternion.identity;
 
   public void Start(Monolith mono)
   {
     this.mono = mono;
+
+    materials = Resources.LoadAll<Material>("Materials/");
+    meshes = Resources.LoadAll<Mesh>("Meshes/");
+    Debug.Log("Meshes Loaded:");
+    for (int i = 0; i < meshes.Length; i++)
+    {
+      Debug.Log(meshes[i].name);
+    }
 
     ParticleSystem ps = mono.gameObject.AddComponent<ParticleSystem>();
     ParticleSystem.ShapeModule shape = ps.shape;
@@ -555,45 +693,81 @@ public class Render
     // gradient.SetKeys(keys, alphaKeys);
     // main.startColor = gradient;
     ParticleSystemRenderer psr = mono.gameObject.GetComponent<ParticleSystemRenderer>();
-    psr.material = matPS;
+    psr.material = Mat("PS");
+
+    orielLine.transform.localScale = mono.oriel;
+    orielLine.transform.position -= mono.oriel * 0.5f;
+
+    properties = new MaterialPropertyBlock();
   }
 
   public void Update()
   {
-    DrawMesh(meshCube, matDefault, mono.rig.lHand.pos, mono.rig.lHand.rot, 0.03f);
-    DrawMesh(meshCube, matDefault, mono.rig.rHand.pos, mono.rig.rHand.rot, 0.03f);
+    DrawMesh(Mesh("Controller Low poly.001"), Mat("Default"), mono.rig.lHand.pos, mono.rig.lHand.rot, 0.03f);
+    DrawMesh(Mesh("Controller Low poly.001"), Mat("Default"), mono.rig.rHand.pos, mono.rig.rHand.rot, 0.03f);
 
-    m4.SetTRS(Vector3.zero, Quaternion.identity, mono.oriel);
-    Graphics.DrawMesh(meshOriel, m4, matOriel, 0);
+    // m4.SetTRS(Vector3.zero, Quaternion.identity, mono.oriel);
+    // Graphics.DrawMesh(meshOriel, m4, matOriel, 0);
     // DrawMesh(meshStart, matUI, Vector3.back * 0.5f, Quaternion.Euler(-90, 0, 0), 0.05f);
 
     Quaternion planetTurn = Quaternion.Euler(0, Time.deltaTime * -6, 0);
     planetRot *= planetTurn;
-    DrawMesh(meshWorld, matDefault, Vector3.zero, planetRot, 0.01f);
-    DrawMesh(meshSphere, matWater, Vector3.zero, planetRot, 5f);
+    DrawMesh(Mesh("Planet husk"), Mat("Default"), Vector3.zero, planetRot, 0.01f);
+    DrawMesh(Mesh("SSphere"), Mat("Water"), Vector3.zero, planetRot, 5f);
+    DrawMesh(Mesh("Oriel Sphere"), Mat("Sky"), Vector3.zero, Quaternion.identity, mono.safeRadius / 2);
 
-    DrawMesh(meshCursor, matDefault, mono.cursor, Quaternion.identity, 0.02f);
+    DrawMesh(Mesh("Cursor"), Mat("Default"), mono.cursor, Quaternion.identity, 0.02f);
 
-    DrawMesh(meshPlayer, matDefault, mono.player.pos, Quaternion.LookRotation(mono.player.dir), 0.02f);
+    DrawMesh(Mesh("Bot for export no engons"), Mat("Default"), mono.player.pos, Quaternion.LookRotation(mono.player.dir), 0.015f);
+    if (mono.player.pos.magnitude > mono.safeRadius) {
+      DrawMesh(Mesh("headlights"), Mat("PS"), mono.player.pos, Quaternion.LookRotation(mono.player.dir), 0.015f);
+    }
 
-    DrawMesh(meshGem, matDefault, mono.gem.pos, Quaternion.identity, 0.01f);
+    m4.SetTRS(
+        mono.gem.pos,
+        Quaternion.Euler(Mathf.Sin(Time.time * 2) * 15, 0, Mathf.Sin(Time.time) * 15),
+        Vector3.one * PopIn(mono.gem.scale) * 0.0075f
+      );
+    // MaterialPropertyBlock properties = new MaterialPropertyBlock();
+    properties.SetColor("_Color", mono.gem.color);
+    Graphics.DrawMesh(Mesh("Gem2"), m4, Mat("Gem"), 0, null, 0, properties);
 
     for (int i = 0; i < mono.trees.Count; i++)
     {
-      mono.trees[i] = planetTurn * mono.trees[i];
-      DrawMesh(meshTree, matDefault,
-        mono.trees[i], Quaternion.LookRotation(mono.trees[i]), 0.005f);
+      Tree tree = mono.trees[i];
+      tree.pos = planetTurn * tree.pos;
+      // mono.render.matGem.SetColor("_Color", tree.color);
+      // DrawMesh(meshTree, matGem,
+      //   tree.pos, Quaternion.LookRotation(tree.pos), 0.005f);
+
+      m4.SetTRS(
+        tree.pos,
+        Quaternion.LookRotation(tree.pos),
+        Vector3.one * 0.004f
+      );
+      // properties = new MaterialPropertyBlock();
+      properties.SetColor("_Color", tree.color);
+      Graphics.DrawMesh(Mesh("Tree "), m4, Mat("Gem"), 0, null, 0, properties);
     }
 
     for (int i = 0; i < mono.enemies.Count; i++)
     {
-      DrawMesh(meshEnemy, matDefault,
-        mono.enemies[i].pos, Quaternion.LookRotation(mono.enemies[i].dir) * mono.enemies[i].rot, 0.015f);
+      int meshIndex = i;
+      while (meshIndex > meshMeteors.Length - 1)
+      {
+        meshIndex -= meshMeteors.Length;
+      }
+      DrawMesh(meshMeteors[meshIndex], Mat("Default"),
+        mono.enemies[i].pos, mono.enemies[i].rot, 0.01f * PopIn(mono.enemies[i].scale));
+      // for (int j = 0; j < mono.enemies[i].pastPos.Length; j++)
+      // {
+      //   DrawMesh(meshMeteors[meshIndex], Mat("Default"),
+      //   mono.enemies[i].pastPos[j], mono.enemies[i].rot, 0.01f * PopIn(mono.enemies[i].scale));
+      // }
     }
 
     // if (true)
     // {
-    //   DrawMesh(meshSphere, matDebug, Vector3.zero, Quaternion.identity, mono.safeRadius / 2);
     //   // DrawMesh(meshSphere, matDebug, mono.cursor, Quaternion.identity, mono.player.followDist / 2);
     //   DrawMesh(meshSphere, matDebug, mono.player.pos, Quaternion.identity, mono.player.radius / 2);
     //   DrawMesh(meshSphere, matDebug, mono.gem.pos, Quaternion.identity, mono.gem.radius / 2);
@@ -605,10 +779,61 @@ public class Render
   }
 
   Matrix4x4 m4 = new Matrix4x4();
+  MaterialPropertyBlock properties;
+
   void DrawMesh(Mesh mesh, Material mat, Vector3 pos, Quaternion rot, float scale)
   {
     m4.SetTRS(pos, rot.normalized, Vector3.one * scale);
     Graphics.DrawMesh(mesh, m4, mat, 0);
+  }
+
+  public Material Mat(string name)
+  {
+    for (int i = 0; i < materials.Length; i++)
+    {
+      if (name == materials[i].name)
+      {
+        return materials[i];
+      }
+    }
+    Debug.LogWarning("Material not found: " + name);
+    return null;
+  }
+
+  public Mesh Mesh(string name)
+  {
+    for (int i = 0; i < meshes.Length; i++)
+    {
+      if (meshes[i].name == name)
+      {
+        return meshes[i];
+      }
+    }
+    Debug.LogWarning("Mesh not found: " + name);
+    return null;
+  }
+
+  float PopIn(float scale)
+  {
+    // init
+    if (scale > 0 && scale < 0.333f)
+    {
+      return 0.25f;
+    }
+    if (scale >= 0.333f && scale < 0.666f)
+    {
+      return 0.75f;
+    }
+    if (scale >= 0.666f && scale < 1)
+    {
+      return 1.25f;
+    }
+
+    // grow
+    // extend
+    // settle
+
+    return scale;
   }
 }
 
@@ -701,54 +926,30 @@ public class Music
 public class ScreenCap
 {
   Monolith mono;
+#if (UNITY_EDITOR)
   RecorderController m_RecorderController;
-  // public RCSettings rcSettings;
-  // public IRSettings irSettings;
+#endif
 
   public void Start(Monolith mono)
   {
     this.mono = mono;
+
+#if (UNITY_EDITOR)
     RecorderControllerSettingsPreset preset = Resources.Load<RecorderControllerSettingsPreset>("RCSettings");
     RecorderControllerSettings settings = ScriptableObject.CreateInstance<RecorderControllerSettings>();
     preset.ApplyTo(settings);
     m_RecorderController = new RecorderController(settings);
-    // controllerSettings.AddRecorderSettings(irSettings);
-    // RecorderController
-
-    // var controllerSettings = ScriptableObject.CreateInstance<RecorderControllerSettings>();
-    // m_RecorderController = new RecorderController(controllerSettings);
-
-    // var mediaOutputFolder = Path.Combine(Application.dataPath, "..", "Screenshots");
-
-    // // Image
-    // var imageRecorder = ScriptableObject.CreateInstance<ImageRecorderSettings>();
-    // imageRecorder.name = "ScreenCap";
-    // imageRecorder.Enabled = true;
-    // imageRecorder.OutputFormat = ImageRecorderSettings.ImageRecorderOutputFormat.PNG;
-    // imageRecorder.CaptureAlpha = false;
-
-    // imageRecorder.OutputFile = Path.Combine(mediaOutputFolder, "image_") + DefaultWildcard.Take;
-
-    // imageRecorder.imageInputSettings = 
-
-    // // imageRecorder.
-    // imageRecorder.imageInputSettings = new GameViewInputSettings
-    // {
-    //   OutputWidth = 7680,
-    //   OutputHeight = 4320,
-    // };
-
-    // // Setup Recording
-    // controllerSettings.AddRecorderSettings(imageRecorder);
-    // controllerSettings.SetRecordModeToSingleFrame(0);
+#endif
   }
 
   public void Update()
   {
+#if (UNITY_EDITOR)
     if (mono.rig.rHand.altButton.down)
     {
       m_RecorderController.PrepareRecording();
       m_RecorderController.StartRecording();
     }
+#endif
   }
 }
