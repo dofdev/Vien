@@ -367,7 +367,7 @@ public class Tree : Detect
   {
     this.pos = pos;
     this.color = color;
-    this.radius = 0.01f;
+    this.radius = 0.02f;
   }
 }
 
