@@ -94,9 +94,13 @@ public class Monolith : MonoBehaviour
     {
       player.Update();
       gem.Update();
-      for (int i = 0; i < enemies.Count; i++)
+    }
+
+    for (int i = 0; i < enemies.Count; i++)
+    {
+      enemies[i].Update();
+      if (playing)
       {
-        enemies[i].Update();
         if (enemies[i].Hit(player))
         {
           textMesh.text = trees.Count + " <br>RESET?";
@@ -104,6 +108,20 @@ public class Monolith : MonoBehaviour
           sfx.Play("explosion");
           playing = false;
           // alternative ending is where all the enemies target what spawned them, and phase out
+        }
+      }
+      else
+      {
+        if (enemies[i].bounced)
+        {
+          for (int j = trees.Count - 1; j >= 0; j--)
+          {
+            if (enemies[i].Hit(trees[j]))
+            {
+              trees.RemoveAt(j);
+              return;
+            }
+          }
         }
       }
     }
@@ -193,7 +211,7 @@ public class Player : Detect
     trail.minVertexDistance = 0.02f;
     trail.startColor = new Color(0.05f, 0.05f, 0.05f, 1);
     trail.endColor = Color.black;
-    trail.material = mono.render.Mat("PS");
+    trail.material = mono.render.Mat("Add");
   }
 
   public void Stop()
@@ -273,7 +291,7 @@ public class Gem : Detect
 
     // set colors based on position (color cube: xyz -> rgb)
     // normalize based on oriel size
-    
+
 
     // List<Color> colors = new List<Color>();
     // for (int i = 0; i < mono.render.meshGem.vertexCount; i++)
@@ -309,7 +327,7 @@ public class Gem : Detect
       new Color(SmoothStep(r, 6), SmoothStep(g, 6), SmoothStep(b, 6)),
       Time.deltaTime * pos.magnitude
     );
-    
+
     if (!held)
     {
       if (Hit(mono.player))
@@ -341,15 +359,15 @@ public class Gem : Detect
 }
 
 [Serializable]
-public class Tree // : Detect
+public class Tree : Detect
 {
-  public Vector3 pos;
   public Color color;
 
   public Tree(Vector3 pos, Color color)
   {
     this.pos = pos;
     this.color = color;
+    this.radius = 0.01f;
   }
 }
 
@@ -424,9 +442,13 @@ public class Enemy : Detect
     // GameObject.Destroy(trail.gameObject);
   }
 
+  [HideInInspector]
+  public bool bounced;
   float delay;
   public void Update()
   {
+    bounced = false;
+
     // move forward
     pos += dir * mono.player.speed * Time.deltaTime;
     Vector3 normal = mono.OutOfBounds(pos);
@@ -437,10 +459,12 @@ public class Enemy : Detect
     else
     {
       // reflect off of safeRadius
-      if (pos.magnitude < mono.safeRadius)
+      float bounceRadius = mono.playing ? mono.safeRadius : mono.planetRadius;
+      if (pos.magnitude < bounceRadius)
       {
         dir = Vector3.Reflect(dir, pos.normalized);
         pos += dir * mono.player.speed * Time.deltaTime;
+        bounced = true;
       }
     }
 
@@ -484,7 +508,9 @@ public class Rig
     GameObject newObj = new GameObject();
     lineCursor = newObj.AddComponent<LineRenderer>();
     lineCursor.widthMultiplier = 0.006f;
-    lineCursor.material = mono.render.Mat("Debug");
+    lineCursor.startColor = new Color(0.05f, 0.05f, 0.05f, 1);
+    lineCursor.endColor = new Color(0.05f, 0.05f, 0.05f, 1);
+    lineCursor.material = mono.render.Mat("Add");
 
     // newObj = new GameObject();
     // lineStretch = newObj.AddComponent<LineRenderer>();
@@ -693,7 +719,7 @@ public class Render
     // gradient.SetKeys(keys, alphaKeys);
     // main.startColor = gradient;
     ParticleSystemRenderer psr = mono.gameObject.GetComponent<ParticleSystemRenderer>();
-    psr.material = Mat("PS");
+    psr.material = Mat("Add");
 
     orielLine.transform.localScale = mono.oriel;
     orielLine.transform.position -= mono.oriel * 0.5f;
@@ -713,24 +739,30 @@ public class Render
     Quaternion planetTurn = Quaternion.Euler(0, Time.deltaTime * -6, 0);
     planetRot *= planetTurn;
     DrawMesh(Mesh("Planet husk"), Mat("Default"), Vector3.zero, planetRot, 0.01f);
-    DrawMesh(Mesh("SSphere"), Mat("Water"), Vector3.zero, planetRot, 5f);
-    DrawMesh(Mesh("Oriel Sphere"), Mat("Sky"), Vector3.zero, Quaternion.identity, mono.safeRadius / 2);
+    DrawMesh(Mesh("Icosphere"), Mat("Water"), Vector3.zero, planetRot, mono.planetRadius);
 
-    DrawMesh(Mesh("Cursor"), Mat("Default"), mono.cursor, Quaternion.identity, 0.02f);
+    DrawMesh(Mesh("Cursor"), Mat("Add"), mono.cursor, Quaternion.identity, 0.02f);
 
-    DrawMesh(Mesh("Bot for export no engons"), Mat("Default"), mono.player.pos, Quaternion.LookRotation(mono.player.dir), 0.015f);
-    if (mono.player.pos.magnitude > mono.safeRadius) {
-      DrawMesh(Mesh("headlights"), Mat("PS"), mono.player.pos, Quaternion.LookRotation(mono.player.dir), 0.015f);
+    if (mono.playing)
+    {
+      DrawMesh(Mesh("Oriel Icosphere"), Mat("Sky"), Vector3.zero, Quaternion.identity, mono.safeRadius);
+      
+      DrawMesh(Mesh("Bot for export no engons"), Mat("Default"), mono.player.pos, Quaternion.LookRotation(mono.player.dir), 0.015f);
+      if (mono.player.pos.magnitude > mono.safeRadius)
+      {
+        DrawMesh(Mesh("headlights"), Mat("Add"), mono.player.pos, Quaternion.LookRotation(mono.player.dir), 0.015f);
+      }
+
+      m4.SetTRS(
+          mono.gem.pos,
+          Quaternion.Euler(Mathf.Sin(Time.time * 2) * 15, 0, Mathf.Sin(Time.time) * 15),
+          Vector3.one * PopIn(mono.gem.scale) * 0.0075f
+        );
+      // MaterialPropertyBlock properties = new MaterialPropertyBlock();
+      properties.SetColor("_Color", mono.gem.color);
+      Graphics.DrawMesh(Mesh("Gem2"), m4, Mat("Gem"), 0, null, 0, properties);
     }
 
-    m4.SetTRS(
-        mono.gem.pos,
-        Quaternion.Euler(Mathf.Sin(Time.time * 2) * 15, 0, Mathf.Sin(Time.time) * 15),
-        Vector3.one * PopIn(mono.gem.scale) * 0.0075f
-      );
-    // MaterialPropertyBlock properties = new MaterialPropertyBlock();
-    properties.SetColor("_Color", mono.gem.color);
-    Graphics.DrawMesh(Mesh("Gem2"), m4, Mat("Gem"), 0, null, 0, properties);
 
     for (int i = 0; i < mono.trees.Count; i++)
     {
@@ -759,11 +791,11 @@ public class Render
       }
       DrawMesh(meshMeteors[meshIndex], Mat("Default"),
         mono.enemies[i].pos, mono.enemies[i].rot, 0.01f * PopIn(mono.enemies[i].scale));
-      // for (int j = 0; j < mono.enemies[i].pastPos.Length; j++)
-      // {
-      //   DrawMesh(meshMeteors[meshIndex], Mat("Default"),
-      //   mono.enemies[i].pastPos[j], mono.enemies[i].rot, 0.01f * PopIn(mono.enemies[i].scale));
-      // }
+      for (int j = 0; j < mono.enemies[i].pastPos.Length; j++)
+      {
+        DrawMesh(meshMeteors[meshIndex], Mat("Default"),
+        mono.enemies[i].pastPos[j], mono.enemies[i].rot, 0.01f * PopIn(mono.enemies[i].scale));
+      }
     }
 
     // if (true)

@@ -1,15 +1,17 @@
-﻿Shader "Custom/Sky"
+Shader "Custom/Add"
 {
   Properties
   {
-    
+    _Color ("Color", Color) = (1,1,1,1)
   }
   SubShader
   {
     Tags { "Queue"="Transparent" "RenderType"="Transparent" }
 
-    // Cull Back
-    Blend SrcAlpha OneMinusSrcAlpha
+    Blend One One
+    Cull Off
+    ZWrite Off
+    ZTest Less
 
     Pass
     {
@@ -18,12 +20,12 @@
       #pragma fragment frag
 
       #include "UnityCG.cginc"
-      #include "UnityStandardUtils.cginc"
 
       struct appdata
       {
         float4 vertex : POSITION;
         float3 normal : NORMAL;
+        fixed4 color : COLOR;
       };
 
       struct v2f
@@ -31,7 +33,14 @@
         float4 vertex : SV_POSITION;
         float3 worldPos : TEXCOORD1;
         float3 normal : NORMAL;
+        fixed4 color : COLOR;
       };
+
+      fixed4 _Color;
+      float rand(float2 co)
+      {
+        return frac(sin(dot(co.xy ,float2(12.9898,78.233))) * 43758.5453);
+      }
 
       v2f vert (appdata v)
       {
@@ -39,21 +48,18 @@
         o.vertex = UnityObjectToClipPos(v.vertex);
         o.worldPos = mul(unity_ObjectToWorld, v.vertex);
         o.normal = UnityObjectToWorldNormal(v.normal);
-        
+        o.color = v.color;
         return o;
       }
 
       fixed4 frag (v2f i) : SV_Target
       {
-        // point light center
-        // then invert!
-        // UnityWorldSpaceViewDir
-        float t = 1 - clamp(dot(i.normal / 2, UnityWorldSpaceViewDir(i.worldPos)), 0, 1);
-        return fixed4(1.0, 1.0, 1.0, clamp(t - 0.5, 0, 1));
-
-        // i.color *= lerp(_Base, _Light, t);
-
-        // return i.color;
+        // float r = rand(i.worldPos.xy);
+        // if (r < 0.1 - i.color.r)
+        // {
+        //   return fixed4(0, 0, 0, 0);
+        // }
+        return i.color * _Color;
       }
       ENDCG
     }
