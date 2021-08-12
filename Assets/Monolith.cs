@@ -497,7 +497,7 @@ public class Rig
   [HideInInspector]
   public float scale;
 
-  LineRenderer lineCursor, lineStretch;
+  LineRenderer lineCursor;
   public void Start(Monolith mono)
   {
     this.mono = mono;
@@ -511,20 +511,9 @@ public class Rig
     lineCursor.startColor = new Color(0.05f, 0.05f, 0.05f, 1);
     lineCursor.endColor = new Color(0.05f, 0.05f, 0.05f, 1);
     lineCursor.material = mono.render.Mat("Add");
-
-    // newObj = new GameObject();
-    // lineStretch = newObj.AddComponent<LineRenderer>();
-    // lineStretch.material = mono.render.matDebug;
   }
 
-  Vector3 cursorDir = Vector3.forward;
-  float cursorDist = 0f;
-  float stretchMid = 0.67f;
-  float stretchScale = 3;
   bool lefty = false;
-
-  float jitter = 3f;
-
   public void Update()
   {
     Vector3 rigPos = Vector3.zero;
@@ -574,16 +563,13 @@ public class Rig
 
     if (hmd != null)
     {
-      bool recalibrate = false;
       if (lHand.button.held)
       {
         lefty = true;
-        recalibrate = true;
       }
       if (rHand.button.held)
       {
         lefty = false;
-        recalibrate = true;
       }
 
       PhysicalInput offHand = lHand;
@@ -593,22 +579,6 @@ public class Rig
         offHand = rHand;
         mainHand = lHand;
       }
-
-      float handDist = Vector3.Distance(mainHand.pos, offHand.pos);
-      if (recalibrate)
-      {
-        // cursorDir = Quaternion.Inverse(mainHand.rot) * -mainHand.pos.normalized;
-        // cursorDist = mainHand.pos.magnitude;
-        // stretchMid = handDist;
-      }
-
-      // float stretch = handDist - stretchMid;
-      // lineStretch.SetPosition(0, offHand.pos);
-      // lineStretch.SetPosition(1, mainHand.pos);
-      // lineStretch.widthMultiplier = 0.03f * ((stretchMid * 3) - Mathf.Clamp(handDist, 0, (stretchMid * 3) - 0.1f));
-
-      // mono.cursor = mainHand.pos + mainHand.rot * cursorDir * (cursorDist + (stretch * stretchScale));
-
 
       if (mainHand.button.down)
       {
