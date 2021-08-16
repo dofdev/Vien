@@ -370,7 +370,9 @@ MonoBehaviour:
     - {fileID: 3634926235976907507, guid: 6aa3937fc6e36fd46adb0069b4e932e3, type: 3}
     - {fileID: -7363874130871373781, guid: 648ff1480e42d2d4c91e3542f63d292d, type: 3}
     - {fileID: -8400989221946287625, guid: 648ff1480e42d2d4c91e3542f63d292d, type: 3}
+    particles: []
   textMesh: {fileID: 0}
+  prefabs: []
   cursor: {x: 0, y: 0, z: 0}
   oriel: {x: 1, y: 0.666, z: 1}
   safeRadius: 0.12

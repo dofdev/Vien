@@ -27,6 +27,8 @@ public class Monolith : MonoBehaviour
   public ScreenCap screenCap;
   [HideInInspector]
   public TextMeshPro textMesh;
+  [HideInInspector]
+  public GameObject[] prefabs;
 
   // public bool paid = false;
 
@@ -38,7 +40,6 @@ public class Monolith : MonoBehaviour
   [HideInInspector]
   public float planetRadius;
 
-  GameObject[] prefabs;
 
   void Awake()
   {
@@ -126,6 +127,7 @@ public class Monolith : MonoBehaviour
           textMesh.text = trees.Count + " <br>RESET?";
           sfx.Play("gameover");
           sfx.Play("explosion");
+          render.PlayPS("PlayerDestroyPS", player.pos, player.dir);
           playing = false;
           // alternative ending is where all the enemies target what spawned them, and phase out
         }
@@ -138,6 +140,7 @@ public class Monolith : MonoBehaviour
           {
             if (enemies[i].Hit(trees[j]))
             {
+              render.PlayPS("TreeDestroyPS", trees[j].pos, trees[j].pos.normalized);
               trees.RemoveAt(j);
               return;
             }
@@ -306,20 +309,8 @@ public class Gem : Detect
         Random.Range(-mono.oriel.z / 2, mono.oriel.z / 2)
       );
     }
+
     scale = 0;
-
-
-    // set colors based on position (color cube: xyz -> rgb)
-    // normalize based on oriel size
-
-
-    // List<Color> colors = new List<Color>();
-    // for (int i = 0; i < mono.render.meshGem.vertexCount; i++)
-    // {
-    //   colors.Add(color);
-    // }
-    // mono.render.meshGem.SetColors(colors);
-    // mono.render.meshGem.MarkModified();
   }
 
   float SmoothStep(float value, int pow)
@@ -353,6 +344,8 @@ public class Gem : Detect
       if (Hit(mono.player))
       {
         mono.sfx.Play("pickup");
+        mono.render.PlayPS("GemPS", pos, Vector3.zero);
+
         held = true;
       }
     }
@@ -364,12 +357,15 @@ public class Gem : Detect
       if (pos.magnitude < mono.planetRadius)
       {
         mono.sfx.Play("tree");
+        mono.render.PlayPS("TreeSpawnPS", pos, pos.normalized);
         mono.trees.Add(new Tree(pos, color));
 
         Enemy enemy = new Enemy();
         enemy.Start(mono, pos);
         mono.enemies.Add(enemy);
         Spawn();
+
+        mono.render.PlayPS("GemPS", pos, Vector3.zero);
 
         held = false;
       }
@@ -431,6 +427,8 @@ public class Enemy : Detect
     rot = Random.rotation;
     spin = Random.rotation * Vector3.forward * Random.value;
     scale = 0;
+
+    mono.render.PlayPS("EnemySpawnPS", pos, dir);
   }
   Vector3 spin = Vector3.forward;
 
@@ -653,8 +651,11 @@ public class Render
   Mesh[] meshes;
   public Mesh[] meshMeteors;
   // public LineRenderer orielLine;
+  [HideInInspector]
+  public ParticleSystem[] particles;
 
   Quaternion planetRot = Quaternion.identity;
+
 
   public void Start(Monolith mono)
   {
@@ -667,6 +668,17 @@ public class Render
     {
       Debug.Log(meshes[i].name);
     }
+
+    List<ParticleSystem> psList = new List<ParticleSystem>();
+    for (int i = 0; i < mono.prefabs.Length; i++)
+    {
+      ParticleSystem ps = mono.prefabs[i].GetComponent<ParticleSystem>();
+      if (ps != null)
+      {
+        psList.Add(ps);
+      }
+    }
+    particles = psList.ToArray();
 
     ParticleSystem starPS = mono.GetPrefab("StarPS").GetComponent<ParticleSystem>();
     ParticleSystem.ShapeModule shape = starPS.shape;
@@ -796,6 +808,21 @@ public class Render
     }
     Debug.LogWarning("Mesh not found: " + name);
     return null;
+  }
+
+  public void PlayPS(string name, Vector3 pos, Vector3 dir)
+  {
+    for (int i = 0; i < particles.Length; i++)
+    {
+      ParticleSystem ps = particles[i];
+      if (ps.gameObject.name == name)
+      {
+        ps.transform.position = pos;
+        ps.transform.rotation = Quaternion.LookRotation(dir);
+        ps.Play();
+        return;
+      }
+    }
   }
 
   float PopIn(float scale)
