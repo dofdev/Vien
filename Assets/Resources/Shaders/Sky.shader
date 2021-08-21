@@ -48,7 +48,7 @@
         // then invert!
         // UnityWorldSpaceViewDir
         float t = 1 - clamp(dot(i.normal / 2, UnityWorldSpaceViewDir(i.worldPos)), 0, 1);
-        return fixed4(1.0, 1.0, 1.0, clamp(t - 0.5, 0, 1));
+        return fixed4(0.3, 0.3, 0.3, clamp(t - 0.2, 0, 1));
 
         // i.color *= lerp(_Base, _Light, t);
 

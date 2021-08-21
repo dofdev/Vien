@@ -311,6 +311,7 @@ public class Gem : Detect
     }
 
     scale = 0;
+    color = PosColor();
   }
 
   float SmoothStep(float value, int pow)
@@ -326,16 +327,21 @@ public class Gem : Detect
     return value;
   }
 
-  bool held = false;
-  public void Update()
+  Color PosColor()
   {
     float r = (pos.x / mono.oriel.x) + 0.5f;
     float g = (pos.y / mono.oriel.y) + 0.5f;
     float b = (pos.z / mono.oriel.z) + 0.5f;
+    return new Color(SmoothStep(r, 6), SmoothStep(g, 6), SmoothStep(b, 6));
+  }
+
+  bool held = false;
+  public void Update()
+  {
     // Mathf.SmoothStep
     color = Color.Lerp(
       color,
-      new Color(SmoothStep(r, 6), SmoothStep(g, 6), SmoothStep(b, 6)),
+      PosColor(),
       Time.deltaTime * pos.magnitude
     );
 
@@ -694,8 +700,8 @@ public class Render
 
   public void Update()
   {
-    DrawMesh(Mesh("Controller Low poly.001"), Mat("Default"), mono.rig.lHand.pos, mono.rig.lHand.rot, 0.03f);
-    DrawMesh(Mesh("Controller Low poly.001"), Mat("Default"), mono.rig.rHand.pos, mono.rig.rHand.rot, 0.03f);
+    DrawMesh(Mesh("Controller"), Mat("Default"), mono.rig.lHand.pos, mono.rig.lHand.rot, 1f * mono.rig.scale);
+    DrawMesh(Mesh("Controller"), Mat("Default"), mono.rig.rHand.pos, mono.rig.rHand.rot, 1f * mono.rig.scale);
 
     // m4.SetTRS(Vector3.zero, Quaternion.identity, mono.oriel);
     // Graphics.DrawMesh(meshOriel, m4, matOriel, 0);
@@ -756,11 +762,11 @@ public class Render
       }
       DrawMesh(meshMeteors[meshIndex], Mat("Default"),
         mono.enemies[i].pos, mono.enemies[i].rot, 0.01f * PopIn(mono.enemies[i].scale));
-      for (int j = 0; j < mono.enemies[i].pastPos.Length; j++)
-      {
-        DrawMesh(meshMeteors[meshIndex], Mat("Default"),
-        mono.enemies[i].pastPos[j], mono.enemies[i].rot, 0.01f * PopIn(mono.enemies[i].scale));
-      }
+      // for (int j = 0; j < mono.enemies[i].pastPos.Length; j++)
+      // {
+      //   DrawMesh(meshMeteors[meshIndex], Mat("Default"),
+      //   mono.enemies[i].pastPos[j], mono.enemies[i].rot, 0.01f * PopIn(mono.enemies[i].scale));
+      // }
     }
 
     // if (true)
