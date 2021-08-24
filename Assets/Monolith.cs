@@ -105,7 +105,7 @@ public class Monolith : MonoBehaviour
       Mouse mouse = Mouse.current;
       if (rig.rHand.button.down || rig.lHand.button.down || (mouse != null && Mouse.current.leftButton.IsPressed()))
       {
-        sfx.Play("button");
+        sfx.Play("button", cursor);
         Start();
         textMesh.text = "";
         playing = true;
@@ -125,8 +125,8 @@ public class Monolith : MonoBehaviour
         if (enemies[i].Hit(player))
         {
           textMesh.text = trees.Count + " <br>RESET?";
-          sfx.Play("gameover");
-          sfx.Play("explosion");
+          sfx.Play("gameover", player.pos);
+          sfx.Play("explosion", player.pos);
           render.PlayPS("PlayerDestroyPS", player.pos, player.dir);
           playing = false;
           // alternative ending is where all the enemies target what spawned them, and phase out
@@ -213,6 +213,9 @@ public class Player : Detect
   [HideInInspector]
   public float speed;
 
+  [HideInInspector]
+  public float vel;
+
   TrailRenderer trail;
   public void Start(Monolith mono)
   {
@@ -228,12 +231,12 @@ public class Player : Detect
     newObj.transform.position = pos;
     trail = newObj.AddComponent<TrailRenderer>();
     trail.startWidth = 1.5f;
-    trail.endWidth = 1f;
+    trail.endWidth = 0f;
     trail.widthMultiplier = radius;
-    trail.time = 3f;
+    trail.time = 1.5f;
     trail.minVertexDistance = 0.02f;
-    trail.startColor = new Color(0.05f, 0.05f, 0.05f, 1);
-    trail.endColor = Color.black;
+    trail.startColor = new Color(0.01f, 0.01f, 0.01f);
+    trail.endColor = new Color(0.01f, 0.01f, 0.01f);
     trail.material = mono.render.Mat("Add");
   }
 
@@ -256,7 +259,7 @@ public class Player : Detect
       {
         if (!inside)
         {
-          mono.sfx.Play("splash", 0.33f);
+          mono.sfx.Play("splash", pos, 0.33f);
           inside = true;
         }
         slow = 0.666f;
@@ -272,7 +275,9 @@ public class Player : Detect
       newPos.y = Mathf.Clamp(newPos.y, -mono.oriel.y / 2, mono.oriel.y / 2);
       newPos.z = Mathf.Clamp(newPos.z, -mono.oriel.z / 2, mono.oriel.z / 2);
     }
-    pos = Vector3.Lerp(pos, newPos, Time.deltaTime * 6 * slow);
+    newPos = Vector3.Lerp(pos, newPos, Time.deltaTime * 6 * slow);
+    vel = (newPos - pos).magnitude / Time.deltaTime;
+    pos = newPos;
 
     trail.transform.position = pos;
 
@@ -349,7 +354,7 @@ public class Gem : Detect
     {
       if (Hit(mono.player))
       {
-        mono.sfx.Play("pickup");
+        mono.sfx.Play("pickup", pos);
         mono.render.PlayPS("GemPS", pos, Vector3.zero);
 
         held = true;
@@ -362,7 +367,7 @@ public class Gem : Detect
 
       if (pos.magnitude < mono.planetRadius)
       {
-        mono.sfx.Play("tree");
+        mono.sfx.Play("tree", pos);
         mono.render.PlayPS("TreeSpawnPS", pos, pos.normalized);
         mono.trees.Add(new Tree(pos, color));
 
@@ -512,16 +517,31 @@ public class Rig
     lineCursor.startColor = new Color(0.05f, 0.05f, 0.05f, 1);
     lineCursor.endColor = new Color(0.05f, 0.05f, 0.05f, 1);
     lineCursor.material = mono.render.Mat("Add");
+
+    // PlayerInput playerInput = mono.gameObject.GetComponent<PlayerInput>();
+    // for (int i = 0; i < playerInput.currentActionMap.actions.Count; i++)
+    // {
+    //   Debug.Log(playerInput.currentActionMap.actions[i]);
+    // }
+
+    // action.AddBinding("<OculusTouchController>/devicePosition");
+    // action.Enable();
   }
+  // public InputAction action;
 
   bool lefty = false;
+  XRHMD hmd;
+  XRController lCon, rCon;
   public void Update()
   {
     Vector3 rigPos = Vector3.zero;
     Quaternion rigRot = Quaternion.identity;
 
-    XRHMD hmd = InputSystem.GetDevice<XRHMD>();
-    if (hmd != null)
+    // //
+    // Vector3 test = action.ReadValue<Vector3>();
+    // Debug.Log(test);
+
+    if (hmd != null && hmd.wasUpdatedThisFrame)
     {
       Vector3 headPos = hmd.centerEyePosition.ReadValue() * 2;
       Quaternion headRot = hmd.centerEyeRotation.ReadValue();
@@ -533,9 +553,12 @@ public class Rig
       cam.transform.rotation = rigRot * headRot;
       cam.transform.localScale = Vector3.one * scale;
     }
+    else
+    {
+      hmd = InputSystem.GetDevice<XRHMD>();
+    }
 
-    XRController lCon = XRController.leftHand;
-    if (lCon != null)
+    if (lCon != null && lCon.wasUpdatedThisFrame)
     {
       lHand.localPos = lCon.devicePosition.ReadValue();
       lHand.pos = Parent(lHand.localPos * scale, rigPos, rigRot);
@@ -543,16 +566,13 @@ public class Rig
 
       lHand.button.Set(lCon.TryGetChildControl("triggerpressed").IsPressed());
       lHand.altButton.Set(lCon.TryGetChildControl("primarybutton").IsPressed());
-
-      // foreach (InputControl ic in lCon.children)
-      // {
-      //   Debug.Log(ic.name);
-      // }
-      // Debug.LogError("WOWWEEE");
+    }
+    else
+    {
+      lCon = XRController.leftHand;
     }
 
-    XRController rCon = XRController.rightHand;
-    if (rCon != null)
+    if (rCon != null && rCon.wasUpdatedThisFrame)
     {
       rHand.localPos = rCon.devicePosition.ReadValue();
       rHand.pos = Parent(rHand.localPos * scale, rigPos, rigRot);
@@ -560,6 +580,10 @@ public class Rig
 
       rHand.button.Set(rCon.TryGetChildControl("triggerpressed").IsPressed());
       rHand.altButton.Set(rCon.TryGetChildControl("primarybutton").IsPressed());
+    }
+    else
+    {
+      rCon = XRController.rightHand;
     }
 
     if (hmd != null)
@@ -669,11 +693,11 @@ public class Render
 
     materials = Resources.LoadAll<Material>("Materials/");
     meshes = Resources.LoadAll<Mesh>("Meshes/");
-    Debug.Log("Meshes Loaded:");
-    for (int i = 0; i < meshes.Length; i++)
-    {
-      Debug.Log(meshes[i].name);
-    }
+    // Debug.Log("Meshes Loaded:");
+    // for (int i = 0; i < meshes.Length; i++)
+    // {
+    //   Debug.Log(meshes[i].name);
+    // }
 
     List<ParticleSystem> psList = new List<ParticleSystem>();
     for (int i = 0; i < mono.prefabs.Length; i++)
@@ -700,8 +724,8 @@ public class Render
 
   public void Update()
   {
-    DrawMesh(Mesh("Controller"), Mat("Default"), mono.rig.lHand.pos, mono.rig.lHand.rot, 1f * mono.rig.scale);
-    DrawMesh(Mesh("Controller"), Mat("Default"), mono.rig.rHand.pos, mono.rig.rHand.rot, 1f * mono.rig.scale);
+    DrawMesh(Mesh("Icosphere"), Mat("Add"), mono.rig.lHand.pos, mono.rig.lHand.rot, 0.01f * mono.rig.scale);
+    DrawMesh(Mesh("Icosphere"), Mat("Add"), mono.rig.rHand.pos, mono.rig.rHand.rot, 0.01f * mono.rig.scale);
 
     // m4.SetTRS(Vector3.zero, Quaternion.identity, mono.oriel);
     // Graphics.DrawMesh(meshOriel, m4, matOriel, 0);
@@ -818,6 +842,7 @@ public class Render
 
   public void PlayPS(string name, Vector3 pos, Vector3 dir)
   {
+    if (dir == Vector3.zero) { dir = Vector3.forward; }
     for (int i = 0; i < particles.Length; i++)
     {
       ParticleSystem ps = particles[i];
@@ -860,8 +885,10 @@ public class SFX
 {
   Monolith mono;
 
-  List<GameObject> srcs = new List<GameObject>();
+  List<AudioSource> srcs = new List<AudioSource>();
   AudioClip[] clips;
+
+  AudioSource jet;
 
   public void Start(Monolith mono)
   {
@@ -869,38 +896,63 @@ public class SFX
 
     for (int i = 0; i < 6; i++)
     {
-      GameObject newSrc = new GameObject("SFX " + i);
-      newSrc.AddComponent<AudioSource>();
-      srcs.Add(newSrc);
+      GameObject go = new GameObject("SFX " + i);
+      AudioSource src = go.AddComponent<AudioSource>();
+      src.spatialBlend = 1;
+      srcs.Add(src);
     }
 
     clips = Resources.LoadAll<AudioClip>("SFX/");
+
+
+    jet = new GameObject("SFX jet").AddComponent<AudioSource>();
+    jet.spatialBlend = 1;
+    jet.loop = true;
+    jet.clip = GetClip("jet");
+    jet.volume = 0;
+    jet.dopplerLevel = 1;
+    jet.Play();
   }
 
   public void Update()
   {
-
+    jet.transform.position = mono.player.pos;
+    jet.volume = Mathf.Clamp01(mono.player.vel / 3);
+    jet.pitch = 1 + mono.player.vel;
   }
 
-  public void Play(string name, float volume = 1)
+  public void Play(string name, Vector3 pos, float volume = 1)
   {
     for (int i = 0; i < srcs.Count; i++)
     {
-      AudioSource src = srcs[i].GetComponent<AudioSource>();
+      AudioSource src = srcs[i];
       if (!src.isPlaying)
       {
-        for (int j = 0; j < clips.Length; j++)
+        AudioClip clip = GetClip(name);
+        if (clip != null)
         {
-          if (name == clips[j].name)
-          {
-            src.clip = clips[j];
-            src.volume = volume;
-            src.Play();
-            return;
-          }
+          src.transform.position = pos;
+
+          src.clip = clip;
+          src.volume = volume;
+          src.Play();
+          return;
         }
       }
     }
+  }
+
+  public AudioClip GetClip(string name)
+  {
+    for (int j = 0; j < clips.Length; j++)
+    {
+      if (name == clips[j].name)
+      {
+        return clips[j];
+      }
+    }
+    Debug.LogWarning("AudioClip not found: " + name);
+    return null;
   }
 }
 

@@ -2,7 +2,7 @@ Shader "Custom/Add"
 {
   Properties
   {
-    _Color ("Color", Color) = (1,1,1,1)
+    [HDR]_Color ("Color", Color) = (1,1,1,1)
   }
   SubShader
   {
@@ -25,7 +25,7 @@ Shader "Custom/Add"
       {
         float4 vertex : POSITION;
         float3 normal : NORMAL;
-        fixed4 color : COLOR;
+        float4 color : COLOR;
       };
 
       struct v2f
@@ -33,10 +33,10 @@ Shader "Custom/Add"
         float4 vertex : SV_POSITION;
         float3 worldPos : TEXCOORD1;
         float3 normal : NORMAL;
-        fixed4 color : COLOR;
+        float4 color : COLOR;
       };
 
-      fixed4 _Color;
+      float4 _Color;
       float rand(float2 co)
       {
         return frac(sin(dot(co.xy ,float2(12.9898,78.233))) * 43758.5453);
@@ -52,12 +52,12 @@ Shader "Custom/Add"
         return o;
       }
 
-      fixed4 frag (v2f i) : SV_Target
+      float4 frag (v2f i) : SV_Target
       {
         // float r = rand(i.worldPos.xy);
         // if (r < 0.1 - i.color.r)
         // {
-        //   return fixed4(0, 0, 0, 0);
+        //   return float4(0, 0, 0, 0);
         // }
         return i.color * _Color;
       }

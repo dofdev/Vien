@@ -1,0 +1,118 @@
+{
+    "name": "Controls",
+    "maps": [
+        {
+            "name": "Rig",
+            "id": "b74d0c31-9263-4c2c-beec-e0c40711a5e4",
+            "actions": [
+                {
+                    "name": "Lpos",
+                    "type": "Value",
+                    "id": "097fba63-d0e4-426d-bd52-e3e3467f5b10",
+                    "expectedControlType": "Vector3",
+                    "processors": "",
+                    "interactions": ""
+                },
+                {
+                    "name": "Rpos",
+                    "type": "Button",
+                    "id": "5b90b6b2-b69c-4292-9a31-2921ea553145",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": ""
+                },
+                {
+                    "name": "Lrot",
+                    "type": "Value",
+                    "id": "ea27c136-29ed-4c69-b35e-ddbf1d8813a1",
+                    "expectedControlType": "Quaternion",
+                    "processors": "",
+                    "interactions": ""
+                },
+                {
+                    "name": "Rrot",
+                    "type": "Value",
+                    "id": "c5e9c1e1-5350-4b25-a7c3-115a208facef",
+                    "expectedControlType": "Quaternion",
+                    "processors": "",
+                    "interactions": ""
+                }
+            ],
+            "bindings": [
+                {
+                    "name": "",
+                    "id": "7db15c26-cd13-47af-a046-f749bea69224",
+                    "path": "<XRController>{LeftHand}/devicePosition",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "XR Con",
+                    "action": "Lpos",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "108f76f2-4390-48b1-a1c0-83a690ff8c71",
+                    "path": "<OculusTouchController>{LeftHand}/devicePosition",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Lpos",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "f3f4ff73-4c45-4780-b429-b7cda12f04ac",
+                    "path": "<XRController>{RightHand}/isTracked",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "XR Con",
+                    "action": "Rpos",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "9399d990-4f87-4e00-8834-94e7852dd3e4",
+                    "path": "<XRController>{LeftHand}/deviceRotation",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "XR Con",
+                    "action": "Lrot",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "35b32cbd-a35d-43a1-b874-59ac440e248c",
+                    "path": "<XRController>{RightHand}/deviceRotation",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "XR Con",
+                    "action": "Rrot",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                }
+            ]
+        }
+    ],
+    "controlSchemes": [
+        {
+            "name": "XR Con",
+            "bindingGroup": "XR Con",
+            "devices": [
+                {
+                    "devicePath": "<XRController>{LeftHand}",
+                    "isOptional": false,
+                    "isOR": false
+                },
+                {
+                    "devicePath": "<XRController>{RightHand}",
+                    "isOptional": false,
+                    "isOR": false
+                }
+            ]
+        }
+    ]
+}

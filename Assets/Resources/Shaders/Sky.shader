@@ -8,8 +8,10 @@
   {
     Tags { "Queue"="Transparent" "RenderType"="Transparent" }
 
-    // Cull Back
-    Blend SrcAlpha OneMinusSrcAlpha
+    Blend One One
+    Cull Back
+    ZWrite Off
+    ZTest Less
 
     Pass
     {
@@ -42,13 +44,13 @@
         return o;
       }
 
-      fixed4 frag (v2f i) : SV_Target
+      float4 frag (v2f i) : SV_Target
       {
         // point light center
         // then invert!
         // UnityWorldSpaceViewDir
         float t = 1 - clamp(dot(i.normal / 2, UnityWorldSpaceViewDir(i.worldPos)), 0, 1);
-        return fixed4(0.3, 0.3, 0.3, clamp(t - 0.2, 0, 1));
+        return float4(0.05, 0.05, 0.05, 1) * clamp(t - 0.2, 0, 1);
 
         // i.color *= lerp(_Base, _Light, t);
 

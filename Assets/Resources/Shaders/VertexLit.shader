@@ -3,8 +3,8 @@
   Properties
   {
     _MainTex ("Main Texture", 2D) = "white" {}
-    _Light ("Light", Color) = (0.9, 0.95, 0.85, 1)
-    _Base ("Base", Color) = (0.5, 0.5, 0.5, 1)
+    [HDR]_Light ("Light", Color) = (0.9, 0.95, 0.85, 1)
+    [HDR]_Base ("Base", Color) = (0.5, 0.5, 0.5, 1)
   }
   SubShader
   {
@@ -25,7 +25,7 @@
         float4 vertex : POSITION;
         float2 uv : TEXCOORD0;
         float3 normal : NORMAL;
-        fixed4 color : COLOR;
+        float4 color : COLOR;
       };
 
       struct v2f
@@ -34,7 +34,7 @@
         float2 uv : TEXCOORD0;
         float3 worldPos : TEXCOORD1;
         float3 normal : NORMAL;
-        fixed4 color : COLOR;
+        float4 color : COLOR;
       };
 
       sampler2D _MainTex;
@@ -42,8 +42,8 @@
 
       // float3 lightDir;
 
-      fixed4 _Base;
-      fixed4 _Light;
+      float4 _Base;
+      float4 _Light;
 
       v2f vert (appdata v)
       {
@@ -57,14 +57,14 @@
         return o;
       }
 
-      fixed4 frag (v2f i) : SV_Target
+      float4 frag (v2f i) : SV_Target
       {
         // point light center
         // then invert!
         float t = clamp(dot(i.normal, normalize(i.worldPos)), 0, 1);
         half4 l = lerp(_Base, _Light, t);
-        fixed4 col = tex2D(_MainTex, i.uv) * l;
-        return fixed4(i.color.r * col.r, i.color.g * col.g, i.color.b * col.b, 1);
+        float4 col = tex2D(_MainTex, i.uv) * l;
+        return float4(i.color.r * col.r, i.color.g * col.g, i.color.b * col.b, 1);
 
         // i.color *= lerp(_Base, _Light, t);
 
