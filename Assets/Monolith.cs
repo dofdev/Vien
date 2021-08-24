@@ -508,7 +508,7 @@ public class Rig
   {
     this.mono = mono;
 
-    offset = new Vector3(0, 0.1f, -1.8f);
+    offset = new Vector3(0, 0, -1.8f);
     scale = 2;
 
     GameObject newObj = new GameObject();
