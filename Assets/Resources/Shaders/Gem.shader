@@ -33,6 +33,7 @@ Shader "Custom/Gem"
         float4 color : COLOR;
       };
 
+      int _Colored;
       float4 _Color;
       sampler2D _Ramp;
 
@@ -93,7 +94,9 @@ Shader "Custom/Gem"
         // }
         // return _Color;
 
-        return i.color;
+        float value = (i.color.r + i.color.g + i.color.b) / 3;
+        float4 grayscale = float4(1,1,1,1) * value;
+        return lerp(grayscale, i.color, _Colored);
       }
       ENDCG
     }
