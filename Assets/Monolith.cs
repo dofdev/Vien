@@ -30,8 +30,6 @@ public class Monolith : MonoBehaviour
   [HideInInspector]
   public GameObject[] prefabs;
 
-  // public bool paid = false;
-
   public Vector3 cursor;
   [HideInInspector]
   public Vector3 oriel;
@@ -43,6 +41,8 @@ public class Monolith : MonoBehaviour
 
   void Awake()
   {
+    Shader.SetGlobalInt("_Colored", 0);
+
     oriel = new Vector3(0.8f, 0.7f, 0.8f);
     safeRadius = 0.145f;
     planetRadius = 0.1f;
@@ -508,8 +508,8 @@ public class Rig
   {
     this.mono = mono;
 
-    offset = new Vector3(0, 0, -1.8f);
     scale = 2;
+    offset = new Vector3(0, 0, -1.8f) / scale;
 
     GameObject newObj = new GameObject();
     lineCursor = newObj.AddComponent<LineRenderer>();
@@ -535,22 +535,26 @@ public class Rig
   public void Update()
   {
     Vector3 rigPos = Vector3.zero;
-    Quaternion rigRot = Quaternion.identity;
 
+    Vector3 localHeadPos = Vector3.zero;
+    Quaternion localHeadRot = Quaternion.identity;
     // //
     // Vector3 test = action.ReadValue<Vector3>();
     // Debug.Log(test);
 
     if (hmd != null && hmd.wasUpdatedThisFrame)
     {
-      Vector3 headPos = hmd.centerEyePosition.ReadValue() * 2;
-      Quaternion headRot = hmd.centerEyeRotation.ReadValue();
+      localHeadPos = hmd.centerEyePosition.ReadValue();
+      localHeadRot = hmd.centerEyeRotation.ReadValue();
       // jitter *= -1;
       // headRot *= Quaternion.Euler(0, jitter, 0);
-      rigPos = -headPos + (headRot * offset);
+      rigPos = -localHeadPos + (localHeadRot * offset);
+      // rigRot = headRot;
 
-      cam.transform.position = Parent(headPos, rigPos, rigRot);
-      cam.transform.rotation = rigRot * headRot;
+      // this is done wrong, *do we need the rigRot just for the y axis rotation
+
+      cam.transform.position = Parent(offset, Vector3.zero, localHeadRot) * scale;
+      cam.transform.rotation = localHeadRot;
       cam.transform.localScale = Vector3.one * scale;
     }
     else
@@ -561,8 +565,8 @@ public class Rig
     if (lCon != null && lCon.wasUpdatedThisFrame)
     {
       lHand.localPos = lCon.devicePosition.ReadValue();
-      lHand.pos = Parent(lHand.localPos * scale, rigPos, rigRot);
-      lHand.rot = rigRot * lCon.deviceRotation.ReadValue();
+      lHand.pos = Parent(lHand.localPos, rigPos, Quaternion.identity) * scale;
+      lHand.rot = lCon.deviceRotation.ReadValue();
 
       lHand.button.Set(lCon.TryGetChildControl("triggerpressed").IsPressed());
       lHand.altButton.Set(lCon.TryGetChildControl("primarybutton").IsPressed());
@@ -575,8 +579,8 @@ public class Rig
     if (rCon != null && rCon.wasUpdatedThisFrame)
     {
       rHand.localPos = rCon.devicePosition.ReadValue();
-      rHand.pos = Parent(rHand.localPos * scale, rigPos, rigRot);
-      rHand.rot = rigRot * rCon.deviceRotation.ReadValue();
+      rHand.pos = Parent(rHand.localPos, rigPos, Quaternion.identity) * scale;
+      rHand.rot = rCon.deviceRotation.ReadValue();
 
       rHand.button.Set(rCon.TryGetChildControl("triggerpressed").IsPressed());
       rHand.altButton.Set(rCon.TryGetChildControl("primarybutton").IsPressed());
@@ -605,25 +609,46 @@ public class Rig
         mainHand = lHand;
       }
 
+      // a 3d cursor that is dragged around by a vr controller
+      // while we rotate around the centered playspace based on the head rotation
+      // the 3d cursor needs to work with the head rotation
+      // 
+      // the cam offset
+      // Vector3 dragPos = mainHand.pos - cam.transform.position;
+      Vector3 dragPos = cam.transform.InverseTransformPoint(mainHand.pos);
+      // cancel out the head rotation
+      // by calculating how the dragPos would be affected by the head rotation
+      // dragPos += (localHeadRot * Quaternion.Inverse(oldLocalHeadRot) * dragPos) - dragPos;
+      //  + (localHeadRot * offset / scale);
+      // dragPos = Parent(dragPos, Vector3.zero, localHeadRot);
+      // 
+
       if (mainHand.button.down)
       {
-        offsetCursor = mono.cursor - Parent(localCursor * scale, rigPos, rigRot);
-        lastPos = mainHand.localPos;
+        // offsetCursor = mono.cursor - (Parent(localCursor, rigPos, Quaternion.identity) * scale);
+        lastPos = dragPos;
       }
       if (mainHand.button.held)
       {
-        localCursor += (mainHand.localPos - lastPos) * 3;
-        mono.cursor = Parent(localCursor * scale, rigPos, rigRot) + offsetCursor;
-        mono.cursor = Vector3.ClampMagnitude(mono.cursor, mono.oriel.z * 2);
+        mono.cursor += localHeadRot * (dragPos - lastPos) * 2 * scale;
+        
+        mono.cursor = Parent(mono.cursor, Vector3.zero, localHeadRot * Quaternion.Inverse(oldLocalHeadRot));
+        // mono.cursor = (Parent(localCursor, Vector3.zero, localHeadRot) * scale) + offsetCursor;
+        //  + offsetCursor;
+
+        // local position -> relative to head
       }
+      // mono.cursor = Vector3.ClampMagnitude(mono.cursor, mono.oriel.z * 2);
 
       lineCursor.SetPosition(0, mono.cursor);
       lineCursor.SetPosition(1, mainHand.pos);
 
-      lastPos = mainHand.localPos;
+      lastPos = dragPos;
+      oldLocalHeadRot = localHeadRot;
     }
   }
   Vector3 lastPos, localCursor, offsetCursor;
+  Quaternion oldLocalHeadRot;
 
   public Vector3 Parent(Vector3 pos, Vector3 pivot, Quaternion rot)
   {

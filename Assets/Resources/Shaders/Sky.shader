@@ -32,7 +32,10 @@
         float4 vertex : SV_POSITION;
         float3 worldPos : TEXCOORD1;
         float3 normal : NORMAL;
+        float4 color : COLOR;
       };
+
+      int _Colored;
 
       v2f vert (appdata v)
       {
@@ -40,6 +43,7 @@
         o.vertex = UnityObjectToClipPos(v.vertex);
         o.worldPos = mul(unity_ObjectToWorld, v.vertex);
         o.normal = UnityObjectToWorldNormal(v.normal);
+        o.color = float4(1,1,1,1);
         
         return o;
       }
@@ -50,11 +54,11 @@
         // then invert!
         // UnityWorldSpaceViewDir
         float t = 1 - clamp(dot(i.normal / 2, UnityWorldSpaceViewDir(i.worldPos)), 0, 1);
-        return float4(0.05, 0.05, 0.05, 1) * clamp(t - 0.2, 0, 1);
+        i.color = float4(0.05, 0.05, 0.05, 1) * clamp(t - 0.2, 0, 1);
 
-        // i.color *= lerp(_Base, _Light, t);
-
-        // return i.color;
+        float value = (i.color.r + i.color.g + i.color.b) / 3;
+        float4 grayscale = float4(1,1,1,1) * value;
+        return lerp(grayscale, i.color, _Colored);
       }
       ENDCG
     }

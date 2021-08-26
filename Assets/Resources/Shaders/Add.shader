@@ -36,7 +36,9 @@ Shader "Custom/Add"
         float4 color : COLOR;
       };
 
+      int _Colored;
       float4 _Color;
+
       float rand(float2 co)
       {
         return frac(sin(dot(co.xy ,float2(12.9898,78.233))) * 43758.5453);
@@ -59,7 +61,11 @@ Shader "Custom/Add"
         // {
         //   return float4(0, 0, 0, 0);
         // }
-        return i.color * _Color;
+        i.color *= _Color;
+
+        float value = (i.color.r + i.color.g + i.color.b) / 3;
+        float4 grayscale = float4(1,1,1,1) * value;
+        return lerp(grayscale, i.color, _Colored);
       }
       ENDCG
     }
