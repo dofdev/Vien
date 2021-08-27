@@ -3,6 +3,7 @@ using System.IO;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Audio;
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.XR;
 #if UNITY_EDITOR
@@ -38,10 +39,14 @@ public class Monolith : MonoBehaviour
   [HideInInspector]
   public float planetRadius;
 
+  [HideInInspector]
+  public bool grayscale;
 
   void Awake()
   {
-    Shader.SetGlobalInt("_Colored", 0);
+    grayscale = false;
+
+
 
     oriel = new Vector3(0.8f, 0.7f, 0.8f);
     safeRadius = 0.145f;
@@ -128,6 +133,7 @@ public class Monolith : MonoBehaviour
           sfx.Play("gameover", player.pos);
           sfx.Play("explosion", player.pos);
           render.PlayPS("PlayerDestroyPS", player.pos, player.dir);
+          player.vel = 0;
           playing = false;
           // alternative ending is where all the enemies target what spawned them, and phase out
         }
@@ -235,8 +241,7 @@ public class Player : Detect
     trail.widthMultiplier = radius;
     trail.time = 1.5f;
     trail.minVertexDistance = 0.02f;
-    trail.startColor = new Color(0.01f, 0.01f, 0.01f);
-    trail.endColor = new Color(0.01f, 0.01f, 0.01f);
+    trail.startColor = trail.endColor = new Color(0.01f, 0.01f, 0.01f);
     trail.material = mono.render.Mat("Add");
   }
 
@@ -367,7 +372,7 @@ public class Gem : Detect
 
       if (pos.magnitude < mono.planetRadius)
       {
-        mono.sfx.Play("tree", pos);
+        mono.sfx.Play("tree", pos, 0.25f);
         mono.render.PlayPS("TreeSpawnPS", pos, pos.normalized);
         mono.trees.Add(new Tree(pos, color));
 
@@ -513,9 +518,8 @@ public class Rig
 
     GameObject newObj = new GameObject();
     lineCursor = newObj.AddComponent<LineRenderer>();
-    lineCursor.widthMultiplier = 0.006f;
-    lineCursor.startColor = new Color(0.05f, 0.05f, 0.05f, 1);
-    lineCursor.endColor = new Color(0.05f, 0.05f, 0.05f, 1);
+    lineCursor.widthMultiplier = 0.003f;
+    lineCursor.startColor = lineCursor.endColor = new Color(0.01f, 0.01f, 0.01f, 1);
     lineCursor.material = mono.render.Mat("Add");
 
     // PlayerInput playerInput = mono.gameObject.GetComponent<PlayerInput>();
@@ -609,23 +613,9 @@ public class Rig
         mainHand = lHand;
       }
 
-      // a 3d cursor that is dragged around by a vr controller
-      // while we rotate around the centered playspace based on the head rotation
-      // the 3d cursor needs to work with the head rotation
-      // 
-      // the cam offset
-      // Vector3 dragPos = mainHand.pos - cam.transform.position;
       Vector3 dragPos = cam.transform.InverseTransformPoint(mainHand.pos);
-      // cancel out the head rotation
-      // by calculating how the dragPos would be affected by the head rotation
-      // dragPos += (localHeadRot * Quaternion.Inverse(oldLocalHeadRot) * dragPos) - dragPos;
-      //  + (localHeadRot * offset / scale);
-      // dragPos = Parent(dragPos, Vector3.zero, localHeadRot);
-      // 
-
       if (mainHand.button.down)
       {
-        // offsetCursor = mono.cursor - (Parent(localCursor, rigPos, Quaternion.identity) * scale);
         lastPos = dragPos;
       }
       if (mainHand.button.held)
@@ -633,12 +623,8 @@ public class Rig
         mono.cursor += localHeadRot * (dragPos - lastPos) * 2 * scale;
         
         mono.cursor = Parent(mono.cursor, Vector3.zero, localHeadRot * Quaternion.Inverse(oldLocalHeadRot));
-        // mono.cursor = (Parent(localCursor, Vector3.zero, localHeadRot) * scale) + offsetCursor;
-        //  + offsetCursor;
-
-        // local position -> relative to head
       }
-      // mono.cursor = Vector3.ClampMagnitude(mono.cursor, mono.oriel.z * 2);
+      mono.cursor = Vector3.ClampMagnitude(mono.cursor, mono.oriel.z * 2);
 
       lineCursor.SetPosition(0, mono.cursor);
       lineCursor.SetPosition(1, mainHand.pos);
@@ -647,7 +633,7 @@ public class Rig
       oldLocalHeadRot = localHeadRot;
     }
   }
-  Vector3 lastPos, localCursor, offsetCursor;
+  Vector3 lastPos;
   Quaternion oldLocalHeadRot;
 
   public Vector3 Parent(Vector3 pos, Vector3 pivot, Quaternion rot)
@@ -704,7 +690,7 @@ public class Render
 
   Material[] materials;
   Mesh[] meshes;
-  public Mesh[] meshMeteors;
+  Mesh[] meshMeteors;
   // public LineRenderer orielLine;
   [HideInInspector]
   public ParticleSystem[] particles;
@@ -723,6 +709,7 @@ public class Render
     // {
     //   Debug.Log(meshes[i].name);
     // }
+    meshMeteors = Resources.LoadAll<Mesh>("Meshes/Meteors/");
 
     List<ParticleSystem> psList = new List<ParticleSystem>();
     for (int i = 0; i < mono.prefabs.Length; i++)
@@ -828,7 +815,11 @@ public class Render
     //     DrawMesh(meshSphere, matDebug, mono.enemies[i].pos, Quaternion.identity, mono.enemies[i].radius / 2);
     //   }
     // }
+
+    
+    Shader.SetGlobalFloat("_Colored", mono.grayscale ? 0 : Mathf.Clamp01((Time.time - 3) / 3));
   }
+
 
   Matrix4x4 m4 = new Matrix4x4();
   MaterialPropertyBlock properties;
@@ -942,7 +933,7 @@ public class SFX
   public void Update()
   {
     jet.transform.position = mono.player.pos;
-    jet.volume = Mathf.Clamp01(mono.player.vel / 3);
+    jet.volume = Mathf.Clamp01(mono.player.vel / 6);
     jet.pitch = 1 + mono.player.vel;
   }
 
@@ -986,6 +977,8 @@ public class Music
 {
   Monolith mono;
 
+  public AudioMixer mixer;
+  public AudioMixerGroup mixerGroup;
   AudioSource srcMenu, srcGame;
 
   public void Start(Monolith mono)
@@ -994,6 +987,7 @@ public class Music
 
     GameObject newSrc = new GameObject("Menu Music");
     srcMenu = newSrc.AddComponent<AudioSource>();
+    srcMenu.outputAudioMixerGroup = mixerGroup;
     srcMenu.clip = Resources.Load<AudioClip>("menu");
     srcMenu.loop = true;
     srcMenu.volume = 0;
@@ -1001,10 +995,12 @@ public class Music
 
     newSrc = new GameObject("Game Music");
     srcGame = newSrc.AddComponent<AudioSource>();
+    srcGame.outputAudioMixerGroup = mixerGroup;
     srcGame.clip = Resources.Load<AudioClip>("game");
     srcGame.loop = true;
     srcGame.volume = 0;
     srcGame.Play();
+
   }
 
   public void Update()
@@ -1014,7 +1010,15 @@ public class Music
 
     float gameVol = mono.playing ? 1 : 0;
     srcGame.volume = Mathf.Lerp(srcGame.volume, gameVol, Time.deltaTime / 3);
+
+
+    if (!mono.grayscale && !transitioned && Time.time > 3)
+    {
+      mixer.FindSnapshot("Color").TransitionTo(3);
+      transitioned = true;
+    }
   }
+  bool transitioned = false;
 }
 
 [Serializable]

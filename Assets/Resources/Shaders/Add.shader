@@ -36,7 +36,7 @@ Shader "Custom/Add"
         float4 color : COLOR;
       };
 
-      int _Colored;
+      float _Colored;
       float4 _Color;
 
       float rand(float2 co)
@@ -65,6 +65,8 @@ Shader "Custom/Add"
 
         float value = (i.color.r + i.color.g + i.color.b) / 3;
         float4 grayscale = float4(1,1,1,1) * value;
+        grayscale *= i.color.a;
+        i.color *= i.color.a;
         return lerp(grayscale, i.color, _Colored);
       }
       ENDCG

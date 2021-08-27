@@ -35,7 +35,7 @@
         float4 color : COLOR;
       };
 
-      int _Colored;
+      float _Colored;
 
       v2f vert (appdata v)
       {
