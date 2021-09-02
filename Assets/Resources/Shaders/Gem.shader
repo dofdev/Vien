@@ -33,7 +33,7 @@ Shader "Custom/Gem"
         float4 color : COLOR;
       };
 
-      int _Colored;
+      float _Colored;
       float4 _Color;
       sampler2D _Ramp;
 
@@ -62,6 +62,7 @@ Shader "Custom/Gem"
         o.worldPos.z += sin(_Time.x + _Time.y);
         float t = clamp(dot(o.normal, normalize(o.worldPos)), 0, 1);
         float4 white = float4(1,1,1,1);
+        _Color = lerp(float4(0.5, 0.5, 0.5, 1), _Color, _Colored);
         o.color = _Color;
         if (t > 0.8)
         {
@@ -94,9 +95,9 @@ Shader "Custom/Gem"
         // }
         // return _Color;
 
-        float value = (i.color.r + i.color.g + i.color.b) / 3;
-        float4 grayscale = float4(1,1,1,1) * value;
-        return lerp(grayscale, i.color, _Colored);
+        // float value = (i.color.r + i.color.g + i.color.b) / 3;
+        // float4 grayscale = float4(1,1,1,1) * value;
+        return i.color;
       }
       ENDCG
     }

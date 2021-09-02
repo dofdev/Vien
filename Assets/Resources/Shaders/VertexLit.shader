@@ -37,7 +37,7 @@
         float4 color : COLOR;
       };
 
-      int _Colored;
+      float _Colored;
       sampler2D _MainTex;
       float4 _MainTex_ST;
 
