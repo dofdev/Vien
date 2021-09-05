@@ -86,10 +86,6 @@ public class Monolith : MonoBehaviour
   void Start()
   {
     trees.Clear();
-    for (int i = 0; i < enemies.Count; i++)
-    {
-      enemies[i].Stop();
-    }
     enemies.Clear();
     player.Stop();
 
@@ -105,10 +101,20 @@ public class Monolith : MonoBehaviour
   {
     rig.Update();
 
+    Mouse mouse = Mouse.current;
+    if (mouse != null && Mouse.current.leftButton.wasPressedThisFrame)
+    {
+      Enemy enemy = new Enemy();
+      enemy.Start(this, Random.rotation * Vector3.forward * 0.01f);
+      enemies.Add(enemy);
+
+      rig.rHand.button.down = true;
+    }
+
+
     if (!playing)
     {
-      Mouse mouse = Mouse.current;
-      if (rig.rHand.button.down || rig.lHand.button.down || (mouse != null && Mouse.current.leftButton.IsPressed()))
+      if (rig.rHand.button.down || rig.lHand.button.down)
       {
         sfx.Play("button", cursor);
         Start();
@@ -127,7 +133,15 @@ public class Monolith : MonoBehaviour
       enemies[i].Update();
       if (playing)
       {
-        if (enemies[i].Hit(player))
+        bool hit = enemies[i].Hit(player);
+        for (int j = 0; j < enemies[i].segments.Length; j++)
+        {
+          if (hit) break;
+
+          hit = enemies[i].segments[j].Hit(player);
+        }
+
+        if (hit)
         {
           textMesh.text = trees.Count + " <br>RESET?";
           sfx.Play("gameover", player.pos);
@@ -135,7 +149,6 @@ public class Monolith : MonoBehaviour
           render.PlayPS("PlayerDestroyPS", player.pos, player.dir);
           player.vel = 0;
           playing = false;
-          // alternative ending is where all the enemies target what spawned them, and phase out
         }
       }
       else
@@ -203,9 +216,6 @@ public class Detect
   {
     return Vector3.Distance(pos, other.pos) <= radius + other.radius;
   }
-
-  // Bounds bounds = new Bounds(Vector3.zero, Vector3.one * scale * 0.5f);
-  // bounds.Intersects(bounds);
 }
 
 [Serializable]
@@ -273,8 +283,7 @@ public class Player : Detect
       {
         inside = false;
       }
-      // Vector3 newPos = pos + (mono.cursor - pos).normalized * speed * slow * Time.deltaTime;
-      // one to one then apply slow
+
       newPos = mono.cursor + (pos - mono.cursor).normalized * followDist;
       newPos.x = Mathf.Clamp(newPos.x, -mono.oriel.x / 2, mono.oriel.x / 2);
       newPos.y = Mathf.Clamp(newPos.y, -mono.oriel.y / 2, mono.oriel.y / 2);
@@ -348,7 +357,6 @@ public class Gem : Detect
   bool held = false;
   public void Update()
   {
-    // Mathf.SmoothStep
     color = Color.Lerp(
       color,
       PosColor(),
@@ -409,9 +417,10 @@ public class Enemy : Detect
   Monolith mono;
 
   public Vector3 dir;
-  public Quaternion rot;
   public float scale;
-  public Vector3[] pastPos;
+  public Detect[] segments;
+  Vector3[] pastPos;
+  Vector3 oldPos;
 
   public void Start(Monolith mono, Vector3 spawnPos)
   {
@@ -419,9 +428,6 @@ public class Enemy : Detect
 
     radius = 0.02f;
 
-    // spawn out, then clamp in
-    // pos = Random.rotation * Vector3.forward * mono.oriel.x * 2;
-    // dir = Random.rotation * Vector3.forward;
     pos = spawnPos;
     dir = spawnPos.normalized;
     pos += dir * mono.oriel.z * 3;
@@ -430,17 +436,22 @@ public class Enemy : Detect
     {
       pos += dir * radius;
     }
-    // pos.x = Mathf.Clamp(pos.x, (-mono.oriel.x / 2) + radius * 2, (mono.oriel.x / 2) - radius * 2);
-    // pos.y = Mathf.Clamp(pos.y, (-mono.oriel.y / 2) + radius * 2, (mono.oriel.y / 2) - radius * 2);
-    // pos.z = Mathf.Clamp(pos.z, (-mono.oriel.z / 2) + radius * 2, (mono.oriel.z / 2) - radius * 2);
 
-    pastPos = new Vector3[5];
-    for (int i = 0; i < pastPos.Length; i++)
+    int cnt = Random.Range(2, 6);
+    pastPos = new Vector3[cnt];
+    segments = new Detect[cnt];
+    for (int i = 0; i < cnt; i++)
     {
       pastPos[i] = pos;
+
+      Detect segment = new Detect();
+      segment.pos = pos;
+      segment.radius = radius;
+      segments[i] = segment;
+
+      oldPos = pos;
     }
 
-    rot = Random.rotation;
     spin = Random.rotation * Vector3.forward * Random.value;
     scale = 0;
 
@@ -448,14 +459,9 @@ public class Enemy : Detect
   }
   Vector3 spin = Vector3.forward;
 
-  public void Stop()
-  {
-    // GameObject.Destroy(trail.gameObject);
-  }
-
   [HideInInspector]
   public bool bounced;
-  float delay;
+  float t;
   public void Update()
   {
     bounced = false;
@@ -479,18 +485,26 @@ public class Enemy : Detect
       }
     }
 
-    if (Time.time >= delay)
+    t += Time.deltaTime / 0.14f;
+    if (t >= 1) // interval between segments
     {
-      for (int i = pastPos.Length - 1; i >= 0; i--)
+      for (int i = pastPos.Length - 1; i > 0; i--)
       {
-        pastPos[i] = pastPos[Mathf.Max(i - 1, 0)];
+        pastPos[i] = pastPos[i - 1];
       }
-      pastPos[0] = pos;
-      delay = Time.time + 0.333f;
+      pastPos[0] = oldPos;
+      oldPos = pos;
+
+      t -= 1;
     }
 
-    // trail.transform.position = pos;
-    rot *= Quaternion.Euler(spin * Time.deltaTime * 120);
+    for (int i = pastPos.Length - 1; i > 0; i--)
+    {
+      segments[i].pos = Vector3.LerpUnclamped(pastPos[i], pastPos[i - 1], t);
+    }
+    segments[0].pos = Vector3.LerpUnclamped(pastPos[0], oldPos, t);
+
+
     scale = Mathf.Clamp01(scale + Time.deltaTime * 3);
   }
 }
@@ -527,11 +541,7 @@ public class Rig
     // {
     //   Debug.Log(playerInput.currentActionMap.actions[i]);
     // }
-
-    // action.AddBinding("<OculusTouchController>/devicePosition");
-    // action.Enable();
   }
-  // public InputAction action;
 
   bool lefty = false;
   XRHMD hmd;
@@ -542,20 +552,13 @@ public class Rig
 
     Vector3 localHeadPos = Vector3.zero;
     Quaternion localHeadRot = Quaternion.identity;
-    // //
-    // Vector3 test = action.ReadValue<Vector3>();
-    // Debug.Log(test);
 
     if (hmd != null && hmd.wasUpdatedThisFrame)
     {
       localHeadPos = hmd.centerEyePosition.ReadValue();
       localHeadRot = hmd.centerEyeRotation.ReadValue();
-      // jitter *= -1;
-      // headRot *= Quaternion.Euler(0, jitter, 0);
+      
       rigPos = -localHeadPos + (localHeadRot * offset);
-      // rigRot = headRot;
-
-      // this is done wrong, *do we need the rigRot just for the y axis rotation
 
       cam.transform.position = Parent(offset, Vector3.zero, localHeadRot) * scale;
       cam.transform.rotation = localHeadRot;
@@ -621,7 +624,7 @@ public class Rig
       if (mainHand.button.held)
       {
         mono.cursor += localHeadRot * (dragPos - lastPos) * 2 * scale;
-        
+
         mono.cursor = Parent(mono.cursor, Vector3.zero, localHeadRot * Quaternion.Inverse(oldLocalHeadRot));
       }
       mono.cursor = Vector3.ClampMagnitude(mono.cursor, mono.oriel.z * 2);
@@ -690,7 +693,6 @@ public class Render
 
   Material[] materials;
   Mesh[] meshes;
-  Mesh[] meshMeteors;
   // public LineRenderer orielLine;
   [HideInInspector]
   public ParticleSystem[] particles;
@@ -704,12 +706,6 @@ public class Render
 
     materials = Resources.LoadAll<Material>("Materials/");
     meshes = Resources.LoadAll<Mesh>("Meshes/");
-    // Debug.Log("Meshes Loaded:");
-    // for (int i = 0; i < meshes.Length; i++)
-    // {
-    //   Debug.Log(meshes[i].name);
-    // }
-    meshMeteors = Resources.LoadAll<Mesh>("Meshes/Meteors/");
 
     List<ParticleSystem> psList = new List<ParticleSystem>();
     for (int i = 0; i < mono.prefabs.Length; i++)
@@ -775,34 +771,34 @@ public class Render
     {
       Tree tree = mono.trees[i];
       tree.pos = planetTurn * tree.pos;
-      // mono.render.matGem.SetColor("_Color", tree.color);
-      // DrawMesh(meshTree, matGem,
-      //   tree.pos, Quaternion.LookRotation(tree.pos), 0.005f);
 
       m4.SetTRS(
         tree.pos,
         Quaternion.LookRotation(tree.pos),
         Vector3.one * 0.004f
       );
-      // properties = new MaterialPropertyBlock();
+      
       properties.SetColor("_Color", tree.color);
       Graphics.DrawMesh(Mesh("Tree "), m4, Mat("Gem"), 0, null, 0, properties);
     }
 
     for (int i = 0; i < mono.enemies.Count; i++)
     {
-      int meshIndex = i;
-      while (meshIndex > meshMeteors.Length - 1)
+      Enemy enemy = mono.enemies[i];
+      DrawMesh(Mesh("New Enemy head E"), Mat("Default"),
+        enemy.pos, Quaternion.LookRotation(-enemy.dir), 0.01f * PopIn(enemy.scale));
+      Vector3 lastPos = enemy.pos;
+      for (int j = 0; j < enemy.segments.Length; j++)
       {
-        meshIndex -= meshMeteors.Length;
+        DrawMesh(
+          j < enemy.segments.Length - 1 ? Mesh("New Enemy body E") : Mesh("New Enemy tail E"),
+          Mat("Default"),
+          enemy.segments[j].pos,
+          Quaternion.LookRotation(enemy.segments[j].pos - lastPos),
+          0.01f * PopIn(enemy.scale)
+        );
+        lastPos = enemy.segments[j].pos;
       }
-      DrawMesh(meshMeteors[meshIndex], Mat("Default"),
-        mono.enemies[i].pos, mono.enemies[i].rot, 0.01f * PopIn(mono.enemies[i].scale));
-      // for (int j = 0; j < mono.enemies[i].pastPos.Length; j++)
-      // {
-      //   DrawMesh(meshMeteors[meshIndex], Mat("Default"),
-      //   mono.enemies[i].pastPos[j], mono.enemies[i].rot, 0.01f * PopIn(mono.enemies[i].scale));
-      // }
     }
 
     // if (true)
@@ -816,7 +812,7 @@ public class Render
     //   }
     // }
 
-    
+
     Shader.SetGlobalFloat("_Colored", mono.grayscale ? 0 : Mathf.Clamp01((Time.time - 3) / 3));
   }
 
