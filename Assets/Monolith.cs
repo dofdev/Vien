@@ -485,8 +485,9 @@ public class Enemy : Detect
       }
     }
 
-    t += Time.deltaTime / 0.14f;
-    if (t >= 1) // interval between segments
+    float timeBetween = 0.14f; // seconds between segments
+    t += Time.deltaTime / timeBetween; 
+    if (t >= 1)
     {
       for (int i = pastPos.Length - 1; i > 0; i--)
       {
