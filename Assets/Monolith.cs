@@ -565,11 +565,12 @@ public class Rig
     newObj.transform.parent = headset.transform;
     newObj.tag = "Spectator";
     spectator = newObj.AddComponent<Camera>();
+    spectator.stereoTargetEye = StereoTargetEyeMask.None;
     spectator.backgroundColor = Color.black;
     spectator.nearClipPlane = 0.01f;
-    spectator.fieldOfView = 40;
     spectator.depth = 0;
-    spectator.stereoTargetEye = StereoTargetEyeMask.None;
+    spectator.fieldOfView = 40;
+    spectator.ResetAspect();
 
 
     newObj = new GameObject();
@@ -588,29 +589,10 @@ public class Rig
   bool lefty = false;
   XRHMD hmd;
   XRController lCon, rCon;
-  bool recenterOnStart = true;
   public void Update()
   {
     if (hmd != null && hmd.wasUpdatedThisFrame)
     {
-      if (recenterOnStart)
-      {
-        // UnityEngine.XR.XRInputSubsystem subsystem = UnityEngine.XR.Management.XRGeneralSettings.Instance.Manager.activeLoader.GetLoadedSubsystem<UnityEngine.XR.XRInputSubsystem>();
-        // if (subsystem != null)
-        // {
-        //   // use subsystem to recenter
-        //   subsystem.TryRecenter();
-        //   Debug.Log("Recenter");
-        // }
-
-        List<UnityEngine.XR.InputDevice> devices = new List<UnityEngine.XR.InputDevice>();
-        UnityEngine.XR.InputDevices.GetDevices(devices);
-        if (devices.Count != 0)
-        {
-          devices[0].subsystem.TryRecenter();
-        }
-        recenterOnStart = false;
-      }
       headset.transform.position = hmd.centerEyePosition.ReadValue();
       headset.transform.rotation = hmd.centerEyeRotation.ReadValue();
     }
@@ -743,7 +725,7 @@ public class Render
 
   Material[] materials;
   Mesh[] meshes;
-  
+
   [HideInInspector]
   public ParticleSystem[] particles;
 
@@ -771,7 +753,11 @@ public class Render
     shape.scale = mono.oriel.size * mono.oriel.scale;
 
     GameObject oriel = mono.oriel.GetPrefab("Oriel");
-    // oriel.GetComponent<LineRenderer>().widthMultiplier *= mono.oriel.scale;
+    LineRenderer[] lrs = oriel.GetComponentsInChildren<LineRenderer>();
+    foreach (LineRenderer l in lrs)
+    {
+      l.widthMultiplier *= mono.oriel.scale;
+    }
     oriel.transform.localScale = mono.oriel.size;
     oriel.transform.localPosition -= mono.oriel.size * 0.5f; // center it
 
