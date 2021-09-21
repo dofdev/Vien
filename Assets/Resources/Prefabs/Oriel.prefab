@@ -50,7 +50,7 @@ LineRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: d264ec5b4655f9e41a0686402189e940, type: 2}
+  - {fileID: 2100000, guid: 0a9e1ec08432cf249b896c34892c512b, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -179,7 +179,7 @@ LineRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: d264ec5b4655f9e41a0686402189e940, type: 2}
+  - {fileID: 2100000, guid: 0a9e1ec08432cf249b896c34892c512b, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -308,7 +308,7 @@ LineRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: d264ec5b4655f9e41a0686402189e940, type: 2}
+  - {fileID: 2100000, guid: 0a9e1ec08432cf249b896c34892c512b, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -473,7 +473,7 @@ LineRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: d264ec5b4655f9e41a0686402189e940, type: 2}
+  - {fileID: 2100000, guid: 0a9e1ec08432cf249b896c34892c512b, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -604,7 +604,7 @@ LineRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: d264ec5b4655f9e41a0686402189e940, type: 2}
+  - {fileID: 2100000, guid: 0a9e1ec08432cf249b896c34892c512b, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -735,7 +735,7 @@ LineRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: d264ec5b4655f9e41a0686402189e940, type: 2}
+  - {fileID: 2100000, guid: 0a9e1ec08432cf249b896c34892c512b, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0

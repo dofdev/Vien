@@ -134,7 +134,7 @@ Preset:
     objectReference: {fileID: 0}
   - target: {fileID: 0}
     propertyPath: m_ImageInputSelector.cameraInputSettings.cameraTag
-    value: EditorOnly
+    value: Spectator
     objectReference: {fileID: 0}
   - target: {fileID: 0}
     propertyPath: m_ImageInputSelector.cameraInputSettings.flipFinalOutput
