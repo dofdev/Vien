@@ -261,7 +261,7 @@ public class Player : Detect
   [HideInInspector]
   public float vel;
 
-  TrailRenderer trail;
+  // TrailRenderer trail;
   public void Start(Monolith mono)
   {
     this.mono = mono;
@@ -272,24 +272,25 @@ public class Player : Detect
     followDist = 0.09f;
     speed = 0.2f;
 
-    GameObject newObj = new GameObject();
-    newObj.transform.position = pos;
-    trail = newObj.AddComponent<TrailRenderer>();
-    trail.startWidth = 1.5f;
-    trail.endWidth = 0f;
-    trail.widthMultiplier = radius;
-    trail.time = 1.5f;
-    trail.minVertexDistance = 0.02f;
-    trail.startColor = trail.endColor = new Color(0.01f, 0.01f, 0.01f);
-    trail.material = mono.render.Material("Add");
+    // GameObject newObj = new GameObject("Player Trail");
+    // newObj.transform.parent = mono.oriel.transform;
+    // newObj.transform.localPosition = pos;
+    // trail = newObj.AddComponent<TrailRenderer>();
+    // trail.startWidth = 1.5f;
+    // trail.endWidth = 0f;
+    // trail.widthMultiplier = radius;
+    // trail.time = 1.5f;
+    // trail.minVertexDistance = 0.02f;
+    // trail.startColor = trail.endColor = new Color(0.01f, 0.01f, 0.01f);
+    // trail.material = mono.render.Material("Add");
   }
 
   public void Stop()
   {
-    if (trail != null)
-    {
-      GameObject.Destroy(trail.gameObject);
-    }
+    // if (trail != null)
+    // {
+    //   GameObject.Destroy(trail.gameObject);
+    // }
   }
 
   bool inside = false;
@@ -322,7 +323,7 @@ public class Player : Detect
     vel = (newPos - pos).magnitude / Time.deltaTime;
     pos = newPos;
 
-    trail.transform.position = pos;
+    // trail.transform.localPosition = pos;
 
     dir = (mono.cursor - pos).normalized;
   }
@@ -572,9 +573,10 @@ public class Rig
     spectator.fieldOfView = 40;
     spectator.ResetAspect();
 
-
-    newObj = new GameObject();
+    newObj = new GameObject("Cursor Line");
+    newObj.transform.parent = mono.oriel.transform;
     lineCursor = newObj.AddComponent<LineRenderer>();
+    // lineCursor.useWorldSpace = false;
     lineCursor.widthMultiplier = 0.003f;
     lineCursor.startColor = lineCursor.endColor = new Color(0.01f, 0.01f, 0.01f, 1);
     lineCursor.material = mono.render.Material("Add");
@@ -627,6 +629,7 @@ public class Rig
       rCon = XRController.rightHand;
     }
 
+    Quaternion r = Quaternion.Inverse(mono.oriel.transform.rotation);
     if (hmd != null)
     {
       if (lHand.button.held)
@@ -653,20 +656,19 @@ public class Rig
       }
       if (mainHand.button.held)
       {
-        Quaternion r = Quaternion.Inverse(mono.oriel.transform.rotation);
         mono.cursor += headset.transform.rotation * r * (dragPos - lastPos) * 2 / mono.oriel.scale;
 
-        mono.cursor = Parent(mono.cursor, Vector3.zero, headset.transform.rotation * Quaternion.Inverse(oldHeadsetRot));
+        mono.cursor = Parent(mono.cursor, Vector3.zero, (headset.transform.rotation * r) * Quaternion.Inverse(oldHeadsetRot));
       }
       mono.cursor = Vector3.ClampMagnitude(mono.cursor, mono.oriel.size.z * 2);
 
-      lineCursor.SetPosition(0, mono.cursor);
-      lineCursor.SetPosition(1, dragPos);
+      lineCursor.SetPosition(0, mono.oriel.transform.TransformPoint(mono.cursor));
+      lineCursor.SetPosition(1, mainHand.pos);
 
       lastPos = dragPos;
     }
 
-    oldHeadsetRot = headset.transform.rotation;
+    oldHeadsetRot = headset.transform.rotation * r;
   }
   Quaternion oldHeadsetRot = Quaternion.identity;
   Vector3 lastPos, dragPos;
@@ -695,7 +697,7 @@ public class Btn
   public bool down;
   public bool held;
   public bool up;
-
+  
   public void Set(bool held)
   {
     down = up = false;
@@ -910,8 +912,8 @@ public class Render
       ParticleSystem ps = particles[i];
       if (ps.gameObject.name == name)
       {
-        ps.transform.position = pos;
-        ps.transform.rotation = Quaternion.LookRotation(dir);
+        ps.transform.localPosition = pos;
+        ps.transform.localRotation = Quaternion.LookRotation(dir);
         ps.Play();
         return;
       }
