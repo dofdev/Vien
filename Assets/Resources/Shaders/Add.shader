@@ -13,6 +13,11 @@ Shader "Custom/Add"
     ZWrite Off
     ZTest Less
 
+    Stencil{
+      Ref 1
+      Comp Equal
+    }
+
     Pass
     {
       CGPROGRAM
@@ -63,7 +68,7 @@ Shader "Custom/Add"
         // }
         i.color *= _Color;
 
-        float value = (i.color.r + i.color.g + i.color.b) / 3;
+        float value = (i.color.r + i.color.r + i.color.g + i.color.g + i.color.g + i.color.b) / 6;
         float4 grayscale = float4(1,1,1,1) * value;
         grayscale *= i.color.a;
         i.color *= i.color.a;

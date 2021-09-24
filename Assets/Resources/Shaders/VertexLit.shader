@@ -12,6 +12,11 @@
 
     Cull Off
 
+    Stencil{
+      Ref 1
+      Comp Equal
+    }
+
     Pass
     {
       CGPROGRAM
@@ -67,7 +72,7 @@
         float4 col = tex2D(_MainTex, i.uv) * l;
         i.color = float4(i.color.r * col.r, i.color.g * col.g, i.color.b * col.b, 1);
 
-        float value = (i.color.r + i.color.g + i.color.b) / 3;
+        float value = (i.color.r + i.color.r + i.color.g + i.color.g + i.color.g + i.color.b) / 6;
         float4 grayscale = float4(1,1,1,1) * value;
         return lerp(grayscale, i.color, _Colored);
       }

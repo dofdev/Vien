@@ -8,6 +8,11 @@ Shader "Custom/Gem"
   {
     Tags { "RenderType"="Opaque" }
 
+    Stencil{
+      Ref 1
+      Comp Equal
+    }
+
     Pass
     {
       CGPROGRAM
@@ -60,10 +65,12 @@ Shader "Custom/Gem"
         // o.color = v.color;
         o.worldPos.x += sin(_Time.y);
         o.worldPos.z += sin(_Time.x + _Time.y);
-        float t = clamp(dot(o.normal, normalize(o.worldPos)), 0, 1);
-        float4 white = float4(1,1,1,1);
+        
         _Color = lerp(float4(0.5, 0.5, 0.5, 1), _Color, _Colored);
         o.color = _Color;
+
+        float4 white = float4(1,1,1,1);
+        float t = clamp(dot(o.normal, normalize(o.worldPos)), 0, 1);
         if (t > 0.8)
         {
           o.color = lerp(_Color, white, (t - 0.8) * 10);

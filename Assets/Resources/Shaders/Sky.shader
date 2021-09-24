@@ -13,6 +13,11 @@
     ZWrite Off
     ZTest Less
 
+    Stencil{
+      Ref 1
+      Comp Equal
+    }
+
     Pass
     {
       CGPROGRAM
@@ -53,10 +58,10 @@
         // point light center
         // then invert!
         // UnityWorldSpaceViewDir
-        float t = 1 - clamp(dot(i.normal / 2, UnityWorldSpaceViewDir(i.worldPos)), 0, 1);
+        float t = 1 - clamp(dot(i.normal / 0.8, UnityWorldSpaceViewDir(i.worldPos)), 0, 1);
         i.color = float4(0.05, 0.05, 0.05, 1) * clamp(t - 0.2, 0, 1);
 
-        float value = (i.color.r + i.color.g + i.color.b) / 3;
+        float value = (i.color.r + i.color.r + i.color.g + i.color.g + i.color.g + i.color.b) / 6;
         float4 grayscale = float4(1,1,1,1) * value;
         return lerp(grayscale, i.color, _Colored);
       }

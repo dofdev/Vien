@@ -8,6 +8,11 @@ Shader "Custom/VertexColor"
   {
     Tags { "RenderType"="Opaque" }
 
+    Stencil{
+      Ref 1
+      Comp Equal
+    }
+
     Pass
     {
       CGPROGRAM
@@ -28,11 +33,15 @@ Shader "Custom/VertexColor"
         float4 color : COLOR;
       };
 
+      float _Colored;
+
       v2f vert (appdata v)
       {
         v2f o;
         o.vertex = UnityObjectToClipPos(v.vertex);
-        o.color = v.color;
+        float value = (v.color.r + v.color.r + v.color.g + v.color.g + v.color.g + v.color.b) / 6;
+        float4 grayscale = float4(1,1,1,1) * value;
+        o.color = lerp(grayscale, v.color, _Colored);
         return o;
       }
 

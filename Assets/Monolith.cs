@@ -49,7 +49,6 @@ public class Monolith : MonoBehaviour
   {
     trees.Clear();
     enemies.Clear();
-    player.Stop();
 
     player.Start(this);
     gem.Start(this);
@@ -68,11 +67,11 @@ public class Monolith : MonoBehaviour
     Mouse mouse = Mouse.current;
     if (mouse != null && Mouse.current.leftButton.wasPressedThisFrame)
     {
-      Enemy enemy = new Enemy();
-      enemy.Start(this, Random.rotation * Vector3.forward * 0.01f);
-      enemies.Add(enemy);
+      // Enemy enemy = new Enemy();
+      // enemy.Start(this, Random.rotation * Vector3.forward * 0.01f);
+      // enemies.Add(enemy);
 
-      rig.rHand.button.down = true;
+      // rig.rHand.button.down = true;
     }
 
 
@@ -81,6 +80,7 @@ public class Monolith : MonoBehaviour
       if (rig.rHand.button.down || rig.lHand.button.down)
       {
         sfx.Play("button", cursor);
+        player.Stop();
         Start();
         oriel.textMesh.text = "";
         playing = true;
@@ -98,7 +98,7 @@ public class Monolith : MonoBehaviour
       if (playing)
       {
         bool hit = enemies[i].Hit(player);
-        for (int j = 0; j < enemies[i].segments.Length; j++)
+        for (int j = 0; j < enemies[i].segments.Count; j++)
         {
           if (hit) break;
 
@@ -161,7 +161,7 @@ public class Oriel
     size = new Vector3(0.8f, 0.7f, 0.8f);
     offset = new Vector3(0, 0, 0.9f);
     scale = 0.5f;
-    safeRadius = 0.145f;
+    safeRadius = 0.15f;
     planetRadius = 0.1f;
 
     transform = new GameObject("Oriel").transform;
@@ -194,7 +194,7 @@ public class Oriel
   {
     Transform headset = mono.rig.headset.transform;
     transform.position = headset.position + headset.rotation * offset;
-    transform.rotation = Quaternion.Euler(0, -headset.transform.rotation.eulerAngles.y * 2, 0);
+    transform.rotation = Quaternion.Euler(0, -headset.transform.rotation.eulerAngles.y * 4, 0);
     transform.localScale = Vector3.one * scale;
 
 
@@ -261,7 +261,7 @@ public class Player : Detect
   [HideInInspector]
   public float vel;
 
-  // TrailRenderer trail;
+  LineRenderer trail;
   public void Start(Monolith mono)
   {
     this.mono = mono;
@@ -269,13 +269,22 @@ public class Player : Detect
     pos = Vector3.zero;
     dir = Vector3.back;
     radius = 0.02f;
-    followDist = 0.09f;
+    followDist = 0.12f;
     speed = 0.2f;
 
-    // GameObject newObj = new GameObject("Player Trail");
-    // newObj.transform.parent = mono.oriel.transform;
-    // newObj.transform.localPosition = pos;
-    // trail = newObj.AddComponent<TrailRenderer>();
+    GameObject newObj = new GameObject("Player Trail");
+    newObj.transform.parent = mono.oriel.transform;
+    newObj.transform.localPosition = Vector3.zero;
+    newObj.transform.localRotation = Quaternion.identity;
+    trail = newObj.AddComponent<LineRenderer>();
+    trail.material = mono.render.Material("Add");
+    trail.positionCount = 0;
+    trail.startWidth = 0.01f;
+    trail.endWidth = 0.00f;
+    trail.useWorldSpace = false;
+    trail.startColor = trail.endColor = new Color(0.01f, 0.01f, 0.01f);
+    trail.endColor = new Color(0, 0, 0);
+
     // trail.startWidth = 1.5f;
     // trail.endWidth = 0f;
     // trail.widthMultiplier = radius;
@@ -287,10 +296,10 @@ public class Player : Detect
 
   public void Stop()
   {
-    // if (trail != null)
-    // {
-    //   GameObject.Destroy(trail.gameObject);
-    // }
+    if (trail != null)
+    {
+      GameObject.Destroy(trail.gameObject);
+    }
   }
 
   bool inside = false;
@@ -319,13 +328,35 @@ public class Player : Detect
       newPos.y = Mathf.Clamp(newPos.y, -mono.oriel.size.y / 2, mono.oriel.size.y / 2);
       newPos.z = Mathf.Clamp(newPos.z, -mono.oriel.size.z / 2, mono.oriel.size.z / 2);
     }
-    newPos = Vector3.Lerp(pos, newPos, Time.deltaTime * 6 * slow);
+    newPos = Vector3.Lerp(pos, newPos, Time.deltaTime * 60 * slow);
     vel = (newPos - pos).magnitude / Time.deltaTime;
     pos = newPos;
 
-    // trail.transform.localPosition = pos;
-
     dir = (mono.cursor - pos).normalized;
+
+
+    // trail system
+    Vector3 trailPos = pos;
+    // -mono.oriel.transform.InverseTransformDirection(dir) * radius
+    trail.positionCount += Mathf.Clamp(Mathf.RoundToInt(1 / Time.deltaTime / 3) - trail.positionCount, -1, 1);
+    trail.SetPosition(0, trailPos * mono.oriel.scale);
+    Vector3 lastPos = trailPos;
+    for (int i = 0; i < trail.positionCount; i++)
+    {
+      if (trail.GetPosition(i) != Vector3.zero)
+      {
+        lastPos = trail.GetPosition(i);
+      }
+      else
+      {
+        trail.SetPosition(i, lastPos);
+      }
+    }
+
+    for (int i = trail.positionCount - 1; i > 0; i--)
+    {
+      trail.SetPosition(i, trail.GetPosition(i - 1));
+    }
   }
   Vector3 newPos = Vector3.zero;
 }
@@ -342,7 +373,7 @@ public class Gem : Detect
   {
     this.mono = mono;
 
-    radius = 0.02f;
+    radius = 0.033f;
 
     Spawn();
   }
@@ -410,16 +441,25 @@ public class Gem : Detect
 
       if (pos.magnitude < mono.oriel.planetRadius)
       {
-        mono.sfx.Play("tree", pos, 0.25f);
-        mono.render.PlayPS("TreeSpawnPS", pos, pos.normalized);
-        mono.trees.Add(new Tree(pos, color));
+        Vector3 dropPos = pos.normalized * mono.oriel.planetRadius;
+        mono.sfx.Play("tree", dropPos, 0.25f);
+        mono.render.PlayPS("TreeSpawnPS", dropPos, dropPos.normalized);
+        mono.trees.Add(new Tree(dropPos, color));
 
-        Enemy enemy = new Enemy();
-        enemy.Start(mono, pos);
-        mono.enemies.Add(enemy);
+        if (mono.enemies.Count == 0)
+        {
+          Enemy enemy = new Enemy();
+          enemy.Start(mono, dropPos);
+          mono.enemies.Add(enemy);
+        }
+        else
+        {
+          mono.enemies[0].Grow();
+        }
+
         Spawn();
 
-        mono.render.PlayPS("GemPS", pos, Vector3.zero);
+        mono.render.PlayPS("GemPS", dropPos, Vector3.zero);
 
         held = false;
       }
@@ -433,11 +473,14 @@ public class Tree : Detect
 {
   public Color color;
 
+  public Vector3 bend;
+
   public Tree(Vector3 pos, Color color)
   {
     this.pos = pos;
     this.color = color;
     this.radius = 0.02f;
+    this.bend = pos.normalized;
   }
 }
 
@@ -448,8 +491,8 @@ public class Enemy : Detect
 
   public Vector3 dir;
   public float scale;
-  public Detect[] segments;
-  Vector3[] pastPos;
+  public List<Detect> segments;
+  List<Vector3> pastPos;
   Vector3 oldPos;
 
   public void Start(Monolith mono, Vector3 spawnPos)
@@ -467,17 +510,17 @@ public class Enemy : Detect
       pos += dir * radius;
     }
 
-    int cnt = Random.Range(2, 6);
-    pastPos = new Vector3[cnt];
-    segments = new Detect[cnt];
+    int cnt = 3;
+    pastPos = new List<Vector3>();
+    segments = new List<Detect>();
     for (int i = 0; i < cnt; i++)
     {
-      pastPos[i] = pos;
+      pastPos.Add(pos);
 
       Detect segment = new Detect();
       segment.pos = pos;
       segment.radius = radius;
-      segments[i] = segment;
+      segments.Add(segment);
 
       oldPos = pos;
     }
@@ -488,6 +531,17 @@ public class Enemy : Detect
     mono.render.PlayPS("EnemySpawnPS", pos, dir);
   }
   Vector3 spin = Vector3.forward;
+
+  public void Grow()
+  {
+    // add pastPos and segment
+    pastPos.Add(pos);
+
+    Detect segment = new Detect();
+    segment.pos = pos;
+    segment.radius = radius;
+    segments.Add(segment);
+  }
 
   [HideInInspector]
   public bool bounced;
@@ -515,11 +569,11 @@ public class Enemy : Detect
       }
     }
 
-    float timeBetween = 0.14f; // seconds between segments
+    float timeBetween = 0.18f; // seconds between segments
     t += Time.deltaTime / timeBetween;
     if (t >= 1)
     {
-      for (int i = pastPos.Length - 1; i > 0; i--)
+      for (int i = pastPos.Count - 1; i > 0; i--)
       {
         pastPos[i] = pastPos[i - 1];
       }
@@ -529,7 +583,7 @@ public class Enemy : Detect
       t -= 1;
     }
 
-    for (int i = pastPos.Length - 1; i > 0; i--)
+    for (int i = pastPos.Count - 1; i > 0; i--)
     {
       segments[i].pos = Vector3.LerpUnclamped(pastPos[i], pastPos[i - 1], t);
     }
@@ -549,7 +603,7 @@ public class Rig
   public Camera headset, spectator;
   public PhysicalInput lHand, rHand;
 
-  LineRenderer lineCursor;
+  // LineRenderer lineCursor;
   public void Start(Monolith mono)
   {
     this.mono = mono;
@@ -573,13 +627,12 @@ public class Rig
     spectator.fieldOfView = 40;
     spectator.ResetAspect();
 
-    newObj = new GameObject("Cursor Line");
-    newObj.transform.parent = mono.oriel.transform;
-    lineCursor = newObj.AddComponent<LineRenderer>();
-    // lineCursor.useWorldSpace = false;
-    lineCursor.widthMultiplier = 0.003f;
-    lineCursor.startColor = lineCursor.endColor = new Color(0.01f, 0.01f, 0.01f, 1);
-    lineCursor.material = mono.render.Material("Add");
+    // newObj = new GameObject("Cursor Line");
+    // newObj.transform.parent = mono.oriel.transform;
+    // lineCursor = newObj.AddComponent<LineRenderer>();
+    // lineCursor.widthMultiplier = 0.003f;
+    // lineCursor.startColor = lineCursor.endColor = new Color(0.01f, 0.01f, 0.01f, 1);
+    // lineCursor.material = mono.render.Material("Add");
 
     // PlayerInput playerInput = mono.gameObject.GetComponent<PlayerInput>();
     // for (int i = 0; i < playerInput.currentActionMap.actions.Count; i++)
@@ -629,7 +682,7 @@ public class Rig
       rCon = XRController.rightHand;
     }
 
-    Quaternion r = Quaternion.Inverse(mono.oriel.transform.rotation);
+    Quaternion orielRot = Quaternion.Inverse(mono.oriel.transform.rotation);
     if (hmd != null)
     {
       if (lHand.button.held)
@@ -649,28 +702,30 @@ public class Rig
         mainHand = lHand;
       }
 
-      dragPos = headset.transform.InverseTransformPoint(mainHand.pos);
+      dragPos = mainHand.pos;
       if (mainHand.button.down)
       {
         lastPos = dragPos;
       }
       if (mainHand.button.held)
       {
-        mono.cursor += headset.transform.rotation * r * (dragPos - lastPos) * 2 / mono.oriel.scale;
+        mono.cursor += orielRot * headset.transform.rotation * ((dragPos - lastPos) * 12);
 
-        mono.cursor = Parent(mono.cursor, Vector3.zero, (headset.transform.rotation * r) * Quaternion.Inverse(oldHeadsetRot));
+        // conteract hand drift
+        mono.cursor = (orielRot * headset.transform.rotation) * Quaternion.Inverse(oldOrielRot) * mono.cursor;
+        // mono.cursor = Parent(mono.cursor, Vector3.zero, (r) * Quaternion.Inverse(oldHeadsetRot));
       }
       mono.cursor = Vector3.ClampMagnitude(mono.cursor, mono.oriel.size.z * 2);
 
-      lineCursor.SetPosition(0, mono.oriel.transform.TransformPoint(mono.cursor));
-      lineCursor.SetPosition(1, mainHand.pos);
+      // lineCursor.SetPosition(0, mono.oriel.transform.TransformPoint(mono.cursor));
+      // lineCursor.SetPosition(1, mainHand.pos);
 
       lastPos = dragPos;
     }
 
-    oldHeadsetRot = headset.transform.rotation * r;
+    oldOrielRot = orielRot * headset.transform.rotation;
   }
-  Quaternion oldHeadsetRot = Quaternion.identity;
+  Quaternion oldOrielRot = Quaternion.identity;
   Vector3 lastPos, dragPos;
 
   public Vector3 Parent(Vector3 pos, Vector3 pivot, Quaternion rot)
@@ -697,7 +752,7 @@ public class Btn
   public bool down;
   public bool held;
   public bool up;
-  
+
   public void Set(bool held)
   {
     down = up = false;
@@ -773,9 +828,10 @@ public class Render
   {
     Shader.SetGlobalFloat("_Colored", mono.grayscale ? 0 : Mathf.Clamp01((Time.time - 3) / 3));
 
-    DrawMesh("Icosphere", "Add", false, mono.rig.lHand.pos, mono.rig.lHand.rot, 0.01f);
-    DrawMesh("Icosphere", "Add", false, mono.rig.rHand.pos, mono.rig.rHand.rot, 0.01f);
-    DrawMesh("Cursor", "Add", true, mono.cursor, Vector3.forward, 0.02f);
+    DrawMesh("Oriel", "Oriel", true, Vector3.zero, Quaternion.identity, mono.oriel.size);
+    // DrawMesh("Icosphere", "Add", false, mono.rig.lHand.pos, mono.rig.lHand.rot, 0.01f);
+    // DrawMesh("Icosphere", "Add", false, mono.rig.rHand.pos, mono.rig.rHand.rot, 0.01f);
+    DrawMesh("Cursor", "Always", true, mono.cursor, Vector3.forward, 0.02f);
 
     Quaternion planetRotDelta = Quaternion.Euler(0, Time.deltaTime * -6, 0);
     planetRot *= planetRotDelta;
@@ -805,18 +861,27 @@ public class Render
     foreach (Tree tree in mono.trees)
     {
       tree.pos = planetRotDelta * tree.pos;
+      float t = Mathf.Max((tree.pos - mono.player.pos).magnitude / tree.radius / 3, 0.5f);
+      Vector3 toDir = Vector3.Slerp((tree.pos - mono.player.pos).normalized, tree.pos.normalized, t);
+      tree.bend = Vector3.Slerp(tree.bend, toDir, Time.deltaTime * Mathf.Max(mono.player.vel, 0.1f) * 20);
       properties.SetColor("_Color", tree.color);
-      DrawMesh("Tree ", "Gem", true, tree.pos, tree.pos.normalized, 0.004f, properties);
+      DrawMesh("Tree ",
+        "Gem",
+        true,
+        tree.pos,
+        tree.bend,
+        0.004f, properties
+      );
     }
 
     foreach (Enemy enemy in mono.enemies)
     {
       DrawMesh("New Enemy head E", "Default", true, enemy.pos, -enemy.dir, 0.01f * PopIn(enemy.scale));
       Vector3 lastPos = enemy.pos;
-      for (int j = 0; j < enemy.segments.Length; j++)
+      for (int j = 0; j < enemy.segments.Count; j++)
       {
         DrawMesh(
-          j < enemy.segments.Length - 1 ? "New Enemy body E" : "New Enemy tail E",
+          j < enemy.segments.Count - 1 ? "New Enemy body E" : "New Enemy tail E",
           "Default",
           true,
           enemy.segments[j].pos,
@@ -848,14 +913,14 @@ public class Render
     bool inOriel,
     Vector3 pos,
     Quaternion rot,
-    float scale = 1,
+    Vector3 scale,
     MaterialPropertyBlock props = null
   )
   {
     m4.SetTRS(
       inOriel ? mono.oriel.transform.TransformPoint(pos) : pos,
       inOriel ? mono.oriel.transform.rotation * rot.normalized : rot.normalized,
-      inOriel ? Vector3.one * mono.oriel.scale * scale : Vector3.one * scale
+      inOriel ? mono.oriel.scale * scale : scale
     );
     Graphics.DrawMesh(
       Mesh(mesh), m4,
@@ -875,7 +940,20 @@ public class Render
     MaterialPropertyBlock props = null
   )
   {
-    DrawMesh(mesh, material, inOriel, pos, Quaternion.LookRotation(dir), scale, props);
+    DrawMesh(mesh, material, inOriel, pos, Quaternion.LookRotation(dir), Vector3.one * scale, props);
+  }
+
+  void DrawMesh(
+    string mesh,
+    string material,
+    bool inOriel,
+    Vector3 pos,
+    Quaternion rot,
+    float scale = 1,
+    MaterialPropertyBlock props = null
+  )
+  {
+    DrawMesh(mesh, material, inOriel, pos, rot, Vector3.one * scale, props);
   }
 
   public Material Material(string name)
