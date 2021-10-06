@@ -17,6 +17,7 @@ using Random = UnityEngine.Random;
 
 public class Monolith : MonoBehaviour
 {
+  public GOManager goManager;
   public Rig rig;
   public Oriel oriel;
   public Player player;
@@ -37,6 +38,7 @@ public class Monolith : MonoBehaviour
   {
     grayscale = false;
 
+    goManager.Start("Prefabs", this.transform);
     oriel.Start(this);
     render.Start(this);
     rig.Start(this);
@@ -140,12 +142,41 @@ public class Monolith : MonoBehaviour
 }
 
 [Serializable]
+public class GOManager
+{
+  [HideInInspector] public GameObject[] prefabs;
+
+  public void Start(string folderName, Transform parent)
+  {
+    prefabs = Resources.LoadAll<GameObject>(folderName + "/");
+    for (int i = 0; i < prefabs.Length; i++)
+    {
+      string name = prefabs[i].name;
+      prefabs[i] = GameObject.Instantiate(prefabs[i], parent);
+      prefabs[i].name = name;
+    }
+  }
+
+  public GameObject GetPrefab(string name)
+  {
+    for (int i = 0; i < prefabs.Length; i++)
+    {
+      if (prefabs[i].name == name)
+      {
+        return prefabs[i];
+      }
+    }
+    return null;
+  }
+}
+
+[Serializable]
 public class Oriel
 {
   Monolith mono;
 
   [HideInInspector] public Transform transform;
-  [HideInInspector] public GameObject[] prefabs;
+  [HideInInspector] public GOManager goManager;
   [HideInInspector] public TextMeshPro textMesh;
 
   [HideInInspector] public Vector3 size;
@@ -165,37 +196,25 @@ public class Oriel
     planetRadius = 0.1f;
 
     transform = new GameObject("Oriel").transform;
-    prefabs = Resources.LoadAll<GameObject>("Prefabs/");
-    for (int i = 0; i < prefabs.Length; i++)
-    {
-      string name = prefabs[i].name;
-      prefabs[i] = GameObject.Instantiate(prefabs[i], transform);
-      prefabs[i].name = name;
-      // Debug.Log(prefabs[i].name);
-    }
-
-    textMesh = GetPrefab("TextMesh").GetComponent<TextMeshPro>();
+    goManager.Start("OrielPrefabs", transform);
+    textMesh = goManager.GetPrefab("TextMesh").GetComponent<TextMeshPro>();
     textMesh.transform.position = Vector3.back * size.z / 2;
   }
 
-  public GameObject GetPrefab(string name)
-  {
-    for (int i = 0; i < prefabs.Length; i++)
-    {
-      if (prefabs[i].name == name)
-      {
-        return prefabs[i];
-      }
-    }
-    return null;
-  }
 
   public void Update()
   {
-    Transform headset = mono.rig.headset.transform;
+    Transform headset = mono.rig.headset;
     transform.position = headset.position + headset.rotation * offset;
     transform.rotation = Quaternion.Euler(0, -headset.transform.rotation.eulerAngles.y * 4, 0);
     transform.localScale = Vector3.one * scale;
+
+
+
+
+
+
+
 
 
 
@@ -600,45 +619,17 @@ public class Rig
   Monolith mono;
 
   [HideInInspector]
-  public Camera headset, spectator;
+  public Transform headset;
   public PhysicalInput lHand, rHand;
+  public PhysicalInput offHand, mainHand;
 
   // LineRenderer lineCursor;
   public void Start(Monolith mono)
   {
     this.mono = mono;
 
-    GameObject newObj = new GameObject("Headset");
-    newObj.AddComponent<AudioListener>();
-    newObj.tag = "MainCamera";
-    headset = newObj.AddComponent<Camera>();
-    headset.backgroundColor = Color.black;
-    headset.nearClipPlane = 0.01f;
-    headset.depth = -1;
-
-    newObj = new GameObject("Spectator");
-    newObj.transform.parent = headset.transform;
-    newObj.tag = "Spectator";
-    spectator = newObj.AddComponent<Camera>();
-    spectator.stereoTargetEye = StereoTargetEyeMask.None;
-    spectator.backgroundColor = Color.black;
-    spectator.nearClipPlane = 0.01f;
-    spectator.depth = 0;
-    spectator.fieldOfView = 40;
-    spectator.ResetAspect();
-
-    // newObj = new GameObject("Cursor Line");
-    // newObj.transform.parent = mono.oriel.transform;
-    // lineCursor = newObj.AddComponent<LineRenderer>();
-    // lineCursor.widthMultiplier = 0.003f;
-    // lineCursor.startColor = lineCursor.endColor = new Color(0.01f, 0.01f, 0.01f, 1);
-    // lineCursor.material = mono.render.Material("Add");
-
-    // PlayerInput playerInput = mono.gameObject.GetComponent<PlayerInput>();
-    // for (int i = 0; i < playerInput.currentActionMap.actions.Count; i++)
-    // {
-    //   Debug.Log(playerInput.currentActionMap.actions[i]);
-    // }
+    // spectator.ResetAspect();
+    headset = mono.goManager.GetPrefab("Headset").transform;
   }
 
   bool lefty = false;
@@ -648,8 +639,8 @@ public class Rig
   {
     if (hmd != null && hmd.wasUpdatedThisFrame)
     {
-      headset.transform.position = hmd.centerEyePosition.ReadValue();
-      headset.transform.rotation = hmd.centerEyeRotation.ReadValue();
+      headset.position = hmd.centerEyePosition.ReadValue();
+      headset.rotation = hmd.centerEyeRotation.ReadValue();
     }
     else
     {
@@ -658,7 +649,7 @@ public class Rig
 
     if (lCon != null && lCon.wasUpdatedThisFrame)
     {
-      lHand.pos = (Vector3)lCon.TryGetChildControl("pointerPosition").ReadValueAsObject();
+      lHand.pos = (Vector3)lCon.TryGetChildControl("devicePosition").ReadValueAsObject();
       lHand.rot = (Quaternion)lCon.TryGetChildControl("pointerRotation").ReadValueAsObject();
 
       lHand.button.Set(lCon.TryGetChildControl("triggerpressed").IsPressed());
@@ -671,7 +662,7 @@ public class Rig
 
     if (rCon != null && rCon.wasUpdatedThisFrame)
     {
-      rHand.pos = (Vector3)rCon.TryGetChildControl("pointerPosition").ReadValueAsObject();
+      rHand.pos = (Vector3)rCon.TryGetChildControl("devicePosition").ReadValueAsObject();
       rHand.rot = (Quaternion)rCon.TryGetChildControl("pointerRotation").ReadValueAsObject();
 
       rHand.button.Set(rCon.TryGetChildControl("triggerpressed").IsPressed());
@@ -694,25 +685,27 @@ public class Rig
         lefty = false;
       }
 
-      PhysicalInput offHand = lHand;
-      PhysicalInput mainHand = rHand;
+      offHand = lHand;
+      mainHand = rHand;
+      Vector3 xFlip = new Vector3(1, 1, 1);
       if (lefty)
       {
         offHand = rHand;
         mainHand = lHand;
+        xFlip = new Vector3(-1, 1, 1);
       }
 
-      dragPos = mainHand.pos;
+      dragPos = mainHand.pos + mainHand.rot * Vector3.Scale(conOffset, xFlip); 
       if (mainHand.button.down)
       {
         lastPos = dragPos;
       }
       if (mainHand.button.held)
       {
-        mono.cursor += orielRot * headset.transform.rotation * ((dragPos - lastPos) * 12);
+        mono.cursor += orielRot * headset.rotation * ((dragPos - lastPos) * 8);
 
         // conteract hand drift
-        mono.cursor = (orielRot * headset.transform.rotation) * Quaternion.Inverse(oldOrielRot) * mono.cursor;
+        mono.cursor = (orielRot * headset.rotation) * Quaternion.Inverse(oldOrielRot) * mono.cursor;
         // mono.cursor = Parent(mono.cursor, Vector3.zero, (r) * Quaternion.Inverse(oldHeadsetRot));
       }
       mono.cursor = Vector3.ClampMagnitude(mono.cursor, mono.oriel.size.z * 2);
@@ -723,10 +716,15 @@ public class Rig
       lastPos = dragPos;
     }
 
-    oldOrielRot = orielRot * headset.transform.rotation;
+    oldOrielRot = orielRot * headset.rotation;
   }
   Quaternion oldOrielRot = Quaternion.identity;
-  Vector3 lastPos, dragPos;
+  Vector3 lastPos;
+  [HideInInspector] public Vector3 dragPos;
+  [HideInInspector] public Vector3 conOffset = new Vector3(0.01f, -0.004f, -0.04f);
+  // different controllers different offsets
+  // is there a right answer? yes the wrist
+
 
   public Vector3 Parent(Vector3 pos, Vector3 pivot, Quaternion rot)
   {
@@ -740,8 +738,17 @@ public class Rig
 [Serializable]
 public class PhysicalInput
 {
-  public Vector3 pos;
+  Vector3 _pos, _oldPos;
+  public Vector3 pos {
+    get { return _pos; }
+    set { _oldPos = _pos; _pos = value; }
+  }
+
   public Quaternion rot;
+
+  public Vector3 delta {
+    get { return _pos - _oldPos; }
+  }
 
   public Btn button, altButton;
 }
@@ -783,8 +790,8 @@ public class Render
   Material[] materials;
   Mesh[] meshes;
 
-  [HideInInspector]
-  public ParticleSystem[] particles;
+  [HideInInspector] public ParticleSystem[] particles;
+  [HideInInspector] public TextMeshProUGUI xruiText;
 
   public void Start(Monolith mono)
   {
@@ -794,9 +801,9 @@ public class Render
     meshes = Resources.LoadAll<Mesh>("Meshes/");
 
     List<ParticleSystem> psList = new List<ParticleSystem>();
-    for (int i = 0; i < mono.oriel.prefabs.Length; i++)
+    for (int i = 0; i < mono.oriel.goManager.prefabs.Length; i++)
     {
-      ParticleSystem ps = mono.oriel.prefabs[i].GetComponent<ParticleSystem>();
+      ParticleSystem ps = mono.oriel.goManager.prefabs[i].GetComponent<ParticleSystem>();
       if (ps != null)
       {
         psList.Add(ps);
@@ -804,12 +811,12 @@ public class Render
     }
     particles = psList.ToArray();
 
-    ParticleSystem starPS = mono.oriel.GetPrefab("StarPS").GetComponent<ParticleSystem>();
+    ParticleSystem starPS = mono.oriel.goManager.GetPrefab("StarPS").GetComponent<ParticleSystem>();
     ParticleSystem.ShapeModule shape = starPS.shape;
     shape.shapeType = ParticleSystemShapeType.Box;
     shape.scale = mono.oriel.size * mono.oriel.scale;
 
-    GameObject oriel = mono.oriel.GetPrefab("Oriel");
+    GameObject oriel = mono.oriel.goManager.GetPrefab("Oriel");
     LineRenderer[] lrs = oriel.GetComponentsInChildren<LineRenderer>();
     foreach (LineRenderer l in lrs)
     {
@@ -820,6 +827,9 @@ public class Render
 
     defaultProperties = new MaterialPropertyBlock();
     properties = new MaterialPropertyBlock();
+
+    GameObject canvas = mono.goManager.GetPrefab("Canvas");
+    xruiText = canvas.GetComponentInChildren<TextMeshProUGUI>();
   }
 
   Quaternion planetRot = Quaternion.identity;
@@ -829,8 +839,9 @@ public class Render
     Shader.SetGlobalFloat("_Colored", mono.grayscale ? 0 : Mathf.Clamp01((Time.time - 3) / 3));
 
     DrawMesh("Oriel", "Oriel", true, Vector3.zero, Quaternion.identity, mono.oriel.size);
-    // DrawMesh("Icosphere", "Add", false, mono.rig.lHand.pos, mono.rig.lHand.rot, 0.01f);
-    // DrawMesh("Icosphere", "Add", false, mono.rig.rHand.pos, mono.rig.rHand.rot, 0.01f);
+    DrawMesh("Icosphere", "Always", false, mono.rig.lHand.pos, mono.rig.lHand.rot, 0.008f);
+    DrawMesh("Icosphere", "Always", false, mono.rig.rHand.pos, mono.rig.rHand.rot, 0.008f);
+    DrawMesh("Icosphere", "Always", false, mono.rig.dragPos, mono.rig.mainHand.rot, 0.004f);
     DrawMesh("Cursor", "Always", true, mono.cursor, Vector3.forward, 0.02f);
 
     Quaternion planetRotDelta = Quaternion.Euler(0, Time.deltaTime * -6, 0);
@@ -902,6 +913,26 @@ public class Render
     //     DrawMesh(meshSphere, matDebug, mono.enemies[i].pos, Quaternion.identity, mono.enemies[i].radius / 2);
     //   }
     // }
+
+    XRUI();
+    void XRUI()
+    {
+      // let them drag the conOffset around
+      if (mono.rig.offHand.altButton.held)
+      {
+        mono.rig.conOffset += Quaternion.Inverse(mono.rig.mainHand.rot) * mono.rig.offHand.delta;
+        // consistent for both left and right
+      }
+
+      // and print its value on the spectator cam, so they can pop out of vr and
+      // carry it over to discord
+      string text = "";
+      text += "x " + mono.rig.conOffset.x.ToString("0.0000") + "\n";
+      text += "y " + mono.rig.conOffset.y.ToString("0.0000") + "\n";
+      text += "z " + mono.rig.conOffset.z.ToString("0.0000") + "\n";
+
+      xruiText.text = text;
+    }
   }
 
   Matrix4x4 m4 = new Matrix4x4();
@@ -1170,7 +1201,7 @@ public class ScreenCap
   public void Update()
   {
 #if (UNITY_EDITOR)
-    if (mono.rig.rHand.altButton.down)
+    if (mono.rig.mainHand.altButton.down)
     {
       m_RecorderController.PrepareRecording();
       m_RecorderController.StartRecording();

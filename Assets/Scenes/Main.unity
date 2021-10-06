@@ -166,9 +166,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7c5f83d6ec6c9df418be42ad1041e0c7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  goManager:
+    prefabs: []
   rig:
     headset: {fileID: 0}
-    spectator: {fileID: 0}
     lHand:
       pos: {x: 0, y: 0, z: 0}
       rot: {x: 0, y: 0, z: 0, w: 0}
@@ -191,8 +192,40 @@ MonoBehaviour:
         down: 0
         held: 0
         up: 0
-    orielPos: {x: 0, y: 0, z: 0}
-    offset: {x: 0, y: 0.1, z: -1.3}
+    offHand:
+      pos: {x: 0, y: 0, z: 0}
+      rot: {x: 0, y: 0, z: 0, w: 0}
+      button:
+        down: 0
+        held: 0
+        up: 0
+      altButton:
+        down: 0
+        held: 0
+        up: 0
+    mainHand:
+      pos: {x: 0, y: 0, z: 0}
+      rot: {x: 0, y: 0, z: 0, w: 0}
+      button:
+        down: 0
+        held: 0
+        up: 0
+      altButton:
+        down: 0
+        held: 0
+        up: 0
+    dragPos: {x: 0, y: 0, z: 0}
+    conOffset: {x: 0.01, y: -0.004, z: -0.04}
+  oriel:
+    transform: {fileID: 0}
+    goManager:
+      prefabs: []
+    textMesh: {fileID: 0}
+    size: {x: 0, y: 0, z: 0}
+    safeRadius: 0
+    planetRadius: 0
+    offset: {x: 0, y: 0, z: 0}
+    scale: 0
   player:
     pos: {x: 0, y: 0, z: 0}
     radius: 0
@@ -209,14 +242,10 @@ MonoBehaviour:
   enemies: []
   render:
     particles: []
+    xruiText: {fileID: 0}
   music:
     mixer: {fileID: 24100000, guid: 71b68fa5cd30c1142996ca2cae594c2c, type: 2}
     mixerGroup: {fileID: 24300002, guid: 71b68fa5cd30c1142996ca2cae594c2c, type: 2}
-  textMesh: {fileID: 0}
-  prefabs: []
   cursor: {x: 0, y: 0, z: 0}
-  oriel: {x: 1, y: 0.666, z: 1}
-  safeRadius: 0.12
-  planetRadius: 0
   grayscale: 0
   playing: 0
